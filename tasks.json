@@ -1,0 +1,889 @@
+{
+  "backlog": [
+    {
+      "type": "Phase",
+      "id": "P1",
+      "title": "Phase 1: Foundation & Core Infrastructure",
+      "status": "Planned",
+      "description": "Establish project infrastructure, restore configuration files, and implement core form stack system with dual-context pattern and promise-based API.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P1.M1",
+          "title": "Project Restoration & Configuration",
+          "status": "Researching",
+          "description": "Restore package.json, TypeScript config, build tooling, and testing infrastructure from previous implementation or create new configuration.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M1.T1",
+              "title": "Restore/Create package.json",
+              "status": "Planned",
+              "description": "Create package.json with correct dependencies for React 18, TypeScript, Vitest, and tsup build tooling.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S1",
+                  "title": "Create package.json with library metadata",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - Previous implementation used: name='geoform', React 18.2.0 peer dependency, TypeScript 5.3.0, Vitest 2.1.0, tsup 8.5.1, React Testing Library 15.0.0.\n2. INPUT: No existing package.json (greenfield restart).\n3. LOGIC: Create package.json with name='geoform', version='0.1.0', type='module'. Add peerDependencies: react@^18.0.0, react-dom@^18.0.0. Add devDependencies: typescript@^5.3.0, @types/react@^18.2.0, vitest@^2.1.0, @testing-library/react@^15.0.0, @vitejs/plugin-react@^4.3.0, tsup@^8.5.1. Add scripts: build, dev, test, test:run, typecheck.\n4. OUTPUT: Valid package.json at project root with all dependencies configured."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S2",
+                  "title": "Create tsconfig.json with strict mode",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - Previous config: target ES2020, lib ES2020/DOM/DOM.Iterable, module ESNext, jsx react-jsx, strict mode enabled, isolatedModules true.\n2. INPUT: package.json from P1.M1.T1.S1.\n3. LOGIC: Create tsconfig.json. Set compilerOptions: target='ES2020', lib=['ES2020', 'DOM', 'DOM.Iterable'], module='ESNext', moduleResolution='bundler', jsx='react-jsx', strict=true, noEmit=true, declaration=true, isolatedModules=true, noUnusedLocals=true, noUnusedParameters=true. Set include=['src'], exclude=['node_modules', 'dist'].\n4. OUTPUT: tsconfig.json with strict TypeScript configuration for React library development."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S3",
+                  "title": "Create vitest.config.ts",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - Previous config used @vitejs/plugin-react, jsdom environment, setupFiles=['./src/__tests__/setup.ts'], include pattern for .test/.spec files.\n2. INPUT: tsconfig.json and package.json.\n3. LOGIC: Create vitest.config.ts importing defineConfig from vitest and react from @vitejs/plugin-react. Export config with plugins=[react()], test={ globals=true, environment='jsdom', setupFiles=['./src/__tests__/setup.ts'], include=['src/**/*.{test,spec}.{ts,tsx}'] }.\n4. OUTPUT: Working Vitest configuration for React component testing."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S4",
+                  "title": "Create tsup.config.ts for dual ESM/CJS build",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S3"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - Previous config: entry=['src/index.ts'], format=['cjs', 'esm'], dts=true, clean=true, sourcemap=true, external=['react', 'react-dom'].\n2. INPUT: package.json and tsconfig.json.\n3. LOGIC: Create tsup.config.ts importing defineConfig from tsup. Export config with entry=['src/index.ts'], format=['cjs', 'esm'], dts=true, clean=true, sourcemap=true, external=['react', 'react-dom'].\n4. OUTPUT: Build configuration that outputs CJS, ESM, and TypeScript declarations."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M1.T2",
+              "title": "Create Directory Structure and Barrel Exports",
+              "status": "Planned",
+              "description": "Set up src/ directory structure with components, context, hooks, types, utils directories and index.ts barrel exports.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S1",
+                  "title": "Create source directory structure",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S4"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - Previous structure: src/components, src/context, src/hooks, src/utils, src/types, src/__tests__ with index.ts barrel exports.\n2. INPUT: Project root with tsconfig paths configured.\n3. LOGIC: Create directories: src/components, src/context, src/hooks, src/utils, src/types, src/__tests__/unit, src/__tests__/integration. Create placeholder index.ts files in each directory for barrel exports.\n4. OUTPUT: Complete directory structure matching previous implementation architecture."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S2",
+                  "title": "Create Vitest setup file",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - Previous setup.ts imported @testing-library/jest-dom and configured afterEach cleanup.\n2. INPUT: Vitest configuration pointing to setup file.\n3. LOGIC: Create src/__tests__/setup.ts. Import '@testing-library/jest-dom'. Add afterEach(() => cleanup()) for automatic test cleanup.\n4. OUTPUT: Test setup file that configures Vitest with RTL matchers and cleanup."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M2",
+          "title": "Core Type Definitions",
+          "status": "Researching",
+          "description": "Define TypeScript interfaces for form props, stack entries, context types, and deferred promises following previous implementation patterns.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M2.T1",
+              "title": "Define FormProps and Core Interfaces",
+              "status": "Planned",
+              "description": "Create the form contract interface that all forms must implement.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S1",
+                  "title": "Define FormProps<T> interface",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 6 and plan/architecture/CODEBASE_STATE.md - FormProps<T> with onSubmit: (value: T) => void, onCancel: () => void, onError?: (error: unknown) => void. Use generic T with default=unknown.\n2. INPUT: TypeScript configuration and src/types directory.\n3. LOGIC: Create src/types/form.ts. Export interface FormProps<T = unknown> with onSubmit callback (value: T) => void, onCancel callback () => void, optional onError callback (error: unknown) => void.\n4. OUTPUT: FormProps<T> interface defining the contract all forms must accept."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S2",
+                  "title": "Define DeferredPromise<T> interface",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - DeferredPromise<T> with promise: Promise<T | undefined>, resolve: (value: T | undefined) => void, reject: (reason?: unknown) => void. Key pattern for async openForm API.\n2. INPUT: FormProps interface from P1.M2.T1.S1.\n3. LOGIC: In src/types/form.ts, export interface DeferredPromise<T> containing promise property of type Promise<T | undefined>, resolve method (value: T | undefined) => void, reject method (reason?: unknown) => void.\n4. OUTPUT: DeferredPromise<T> interface enabling externally-controlled promise resolution."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S3",
+                  "title": "Define StackEntry and OpenFormOptions interfaces",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - StackEntry (public: id, label), InternalStackEntry<T> (adds component, confirmOnCancel, deferred), OpenFormOptions<T> (id, component, label?, confirmOnCancel?).\n2. INPUT: DeferredPromise interface from P1.M2.T1.S2.\n3. LOGIC: Create src/types/stack.ts. Export interface StackEntry with id: string, optional label: string. Export interface OpenFormOptions<T> with id: string, component: ComponentType<FormProps<T>>, optional label: string, optional confirmOnCancel: boolean. Export interface InternalStackEntry<T = unknown> extending StackEntry with component: ComponentType<FormProps<T>>, confirmOnCancel: boolean, deferred: DeferredPromise<T>.\n4. OUTPUT: Complete type definitions for stack management and form opening options."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M2.T2",
+              "title": "Define Context Types",
+              "status": "Planned",
+              "description": "Create TypeScript types for the dual-context pattern (state context and actions context).",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S1",
+                  "title": "Define FormStackState and FormStackActions interfaces",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T1.S3"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/REACT_PATTERNS_RESEARCH_2025.md - Dual Context Pattern: separate state context (low-frequency updates) from actions context (high-frequency updates) to minimize re-renders.\n2. INPUT: StackEntry and InternalStackEntry types from P1.M2.T1.S3.\n3. LOGIC: Create src/types/context.ts. Export interface FormStackState with stack: readonly StackEntry[] (public, readonly view). Export interface FormStackActions with openForm<T>(options: OpenFormOptions<T>): Promise<T | undefined>, closeForm(): void.\n4. OUTPUT: Context type definitions implementing dual-context pattern for performance."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S2",
+                  "title": "Define reducer action types",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - Reducer pattern with actions: PUSH_FORM (entry: InternalStackEntry), POP_FORM, POP_TO_INDEX (index: number).\n2. INPUT: InternalStackEntry type from P1.M2.T1.S3.\n3. LOGIC: In src/types/context.ts, export type FormStackAction = { type: 'PUSH_FORM', entry: InternalStackEntry } | { type: 'POP_FORM' } | { type: 'POP_TO_INDEX', index: number }. Export interface FormStackReducerState with stack: InternalStackEntry[].\n4. OUTPUT: Reducer action types enabling immutable state transitions."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M3",
+          "title": "Dual Context Implementation",
+          "status": "Planned",
+          "description": "Implement FormStackProvider with dual-context pattern using useReducer for state management.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M3.T1",
+              "title": "Implement FormStackReducer",
+              "status": "Planned",
+              "description": "Create reducer function for managing stack state transitions.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S1",
+                  "title": "Implement formStackReducer function",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M2.T2.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md and plan/architecture/REACT_PATTERNS_RESEARCH_2025.md - Reducer pattern with PUSH_FORM (append to stack), POP_FORM (remove last), POP_TO_INDEX (slice to index). Must be immutable.\n2. INPUT: FormStackReducerState and FormStackAction types from P1.M2.T2.S2.\n3. LOGIC: Create src/context/formStackReducer.ts. Export function formStackReducer(state: FormStackReducerState, action: FormStackAction): FormStackReducerState. Handle 'PUSH_FORM': return { stack: [...state.stack, action.entry] }. Handle 'POP_FORM': return { stack: state.stack.slice(0, -1) }. Handle 'POP_TO_INDEX': return { stack: state.stack.slice(0, action.index + 1) }.\n4. OUTPUT: Pure reducer function managing stack state transitions immutably."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M3.T2",
+              "title": "Create Dual Context System",
+              "status": "Planned",
+              "description": "Implement FormStackStateContext and FormStackActionsContext following context splitting pattern.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T2.S1",
+                  "title": "Create context definitions",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M3.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/REACT_PATTERNS_RESEARCH_2025.md - Context Splitting Pattern: separate FormStackStateContext (read-only stack data) from FormStackActionsContext (operations) to minimize re-renders.\n2. INPUT: FormStackState and FormStackActions types from P1.M2.T2.S1.\n3. LOGIC: Create src/context/FormStackContext.ts. Import createContext from React. Export const FormStackStateContext = createContext<FormStackState | null>(null). Export const FormStackActionsContext = createContext<FormStackActions | null>(null).\n4. OUTPUT: Dual context definitions separating state from actions."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T2.S2",
+                  "title": "Implement FormStackProvider component",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M3.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md and plan/architecture/REACT_PATTERNS_RESEARCH_2025.md - Use useReducer with formStackReducer. Memoize context values with useMemo. Provide both contexts. Children prop.\n2. INPUT: formStackReducer from P1.M3.T1.S1, context definitions from P1.M3.T2.S1.\n3. LOGIC: Create src/components/FormStackProvider.tsx. Import useReducer, useMemo, createContext. Define component accepting children: ReactNode. Initialize reducer: const [state, dispatch] = useReducer(formStackReducer, { stack: [] }). Implement openForm using createDeferredPromise (to be created). Implement closeForm dispatching POP_FORM. Memoize state value and actions value. Return providers nested.\n4. OUTPUT: FormStackProvider component with dual contexts and memoized values."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M4",
+          "title": "Promise Utility and Hooks",
+          "status": "Planned",
+          "description": "Implement createDeferredPromise utility and useFormStack hooks for context consumption.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M4.T1",
+              "title": "Implement createDeferredPromise Utility",
+              "status": "Planned",
+              "description": "Create utility function for generating externally-controlled promises.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T1.S1",
+                  "title": "Implement createDeferredPromise function",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M3.T2.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - createDeferredPromise<T>() returns { promise: Promise<T | undefined>, resolve: (value: T | undefined) => void, reject: (reason?: unknown) => void }. Critical pattern for async openForm API.\n2. INPUT: DeferredPromise<T> interface from P1.M2.T1.S2.\n3. LOGIC: Create src/utils/createDeferredPromise.ts. Export function createDeferredPromise<T>(): DeferredPromise<T>. Declare let resolve, reject variables. Create new Promise<T | undefined> assigning res/rej to resolve/reject. Return { promise, resolve: resolve!, reject: reject! }.\n4. OUTPUT: Utility function creating externally-controlled promises with resolve/reject methods."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M4.T2",
+              "title": "Implement useFormStack Hooks",
+              "status": "Planned",
+              "description": "Create hooks for consuming form stack context with proper error handling.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T2.S1",
+                  "title": "Implement useFormStackState hook",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M4.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/REACT_PATTERNS_RESEARCH_2025.md - Context Splitting Pattern: create separate hooks useFormStackState and useFormStackActions for selective consumption. Fail-fast if used outside provider.\n2. INPUT: FormStackStateContext from P1.M3.T2.S1.\n3. LOGIC: Create src/hooks/useFormStackState.ts. Import useContext. Export function useFormStackState(): FormStackState. Call useContext(FormStackStateContext). If null, throw Error('useFormStackState must be used within FormStackProvider'). Return context.\n4. OUTPUT: Hook consuming state context with error handling."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T2.S2",
+                  "title": "Implement useFormStackActions hook",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M4.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Context Splitting Pattern - separate actions hook to prevent re-renders when state changes.\n2. INPUT: FormStackActionsContext from P1.M3.T2.S1.\n3. LOGIC: Create src/hooks/useFormStackActions.ts. Export function useFormStackActions(): FormStackActions. Call useContext(FormStackActionsContext). If null, throw Error('useFormStackActions must be used within FormStackProvider'). Return context.\n4. OUTPUT: Hook consuming actions context with error handling."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T2.S3",
+                  "title": "Implement useFormStack combined hook",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M4.T2.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 5.2 - useFormStack() returns { openForm, closeForm, stack }. Convenience hook combining state and actions.\n2. INPUT: useFormStackState and useFormStackActions from P1.M4.T2.S1/S2.\n3. LOGIC: Create src/hooks/useFormStack.ts. Import useFormStackState, useFormStackActions. Export function useFormStack(). Return { ...useFormStackState(), ...useFormStackActions() }.\n4. OUTPUT: Combined hook returning complete form stack API."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M5",
+          "title": "Form Rendering Engine",
+          "status": "Planned",
+          "description": "Implement form stack renderer with hidden container pattern for state preservation.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M5.T1",
+              "title": "Implement FormStackRenderer Component",
+              "status": "Planned",
+              "description": "Build component that renders forms from stack with CSS hiding for inactive forms.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M5.T1.S1",
+                  "title": "Implement stack rendering with hidden container pattern",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M4.T2.S3"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md and plan/architecture/REACT_PATTERNS_RESEARCH_2025.md - Hidden Container Pattern: render all forms, hide inactive with style={{ display: isActive ? 'block' : 'none' }}. Preserves parent state.\n2. INPUT: useFormStack hook returning stack array. FormStackProvider with reducer state.\n3. LOGIC: Update src/components/FormStackProvider.tsx to include rendering logic. Map over internal stack (state.stack). For each entry, render <div key={entry.id} style={{ display: index === state.stack.length - 1 ? 'block' : 'none' }}>. Inside, render <entry.component />. Inject onSubmit/onCancel/onError callbacks.\n4. OUTPUT: FormStackProvider rendering all forms with CSS visibility control."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M5.T1.S2",
+                  "title": "Inject form callbacks and wire promise resolution",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M5.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - onSubmit calls entry.deferred.resolve(value) then dispatch POP_FORM. onCancel calls entry.deferred.resolve(undefined) then dispatch POP_FORM. onError calls entry.deferred.reject.\n2. INPUT: InternalStackEntry with deferred from reducer state.\n3. LOGIC: In FormStackProvider render loop, create handleSubmit = (value: T) => { entry.deferred.resolve(value); dispatch({ type: 'POP_FORM' }); }. Create handleCancel = () => { entry.deferred.resolve(undefined); dispatch({ type: 'POP_FORM' }); }. Create handleError = (error: unknown) => { entry.deferred.reject(error); }. Pass to form component: onSubmit={handleSubmit}, onCancel={handleCancel}, onError={handleError}.\n4. OUTPUT: Callback injection connecting form actions to promise resolution and stack updates."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M5.T1.S3",
+                  "title": "Integrate openForm with createDeferredPromise",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M5.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - openForm creates deferred promise, pushes to stack with PUSH_FORM action, returns promise. Key to async API.\n2. INPUT: createDeferredPromise utility from P1.M4.T1.S1. FormStackReducer from P1.M3.T1.S1.\n3. LOGIC: In FormStackProvider, implement openForm = <T>(options: OpenFormOptions<T>): Promise<T | undefined> => { const deferred = createDeferredPromise<T>(); dispatch({ type: 'PUSH_FORM', entry: { ...options, deferred } }); return deferred.promise; }.\n4. OUTPUT: openForm method returning Promise that resolves when form submits or cancels."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M6",
+          "title": "Public API Export",
+          "status": "Planned",
+          "description": "Create main entry point with public API exports.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M6.T1",
+              "title": "Create src/index.ts barrel export",
+              "status": "Planned",
+              "description": "Export public API from main entry point.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M6.T1.S1",
+                  "title": "Export public API from index.ts",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M5.T1.S3"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - Previous exports: FormStackProvider, useFormStack, FormProps, types. Keep internal implementation details (reducer, deferred promise) private.\n2. INPUT: All implemented components, hooks, types.\n3. LOGIC: Create src/index.ts. Export { FormStackProvider } from './components/FormStackProvider'. Export { useFormStack } from './hooks/useFormStack'. Export type { FormProps } from './types/form'. Export type { OpenFormOptions } from './types/stack'. Optionally export StackEntry type for TypeScript consumers.\n4. OUTPUT: Clean public API exporting only consumer-facing interfaces."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P2",
+      "title": "Phase 2: Enhanced Features",
+      "status": "Planned",
+      "description": "Implement breadcrumb navigation, cancellation confirmation dialogs, and per-form error boundaries.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P2.M1",
+          "title": "Breadcrumb Navigation",
+          "status": "Planned",
+          "description": "Build breadcrumb component displaying form hierarchy with clickable navigation.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P2.M1.T1",
+              "title": "Create Breadcrumbs Component",
+              "status": "Planned",
+              "description": "Display form stack as clickable breadcrumb trail with separators.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T1.S1",
+                  "title": "Implement Breadcrumbs display component",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M6.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 7 - Breadcrumbs derived from stack. Show nesting depth. Optional navigation. Click pops deeper forms.\n2. INPUT: useFormStackState hook returning stack array.\n3. LOGIC: Create src/components/Breadcrumbs.tsx. Accept optional onClick prop. Consume useFormStackState to get stack. Map stack to breadcrumb items: each with id/label. Add separators (> / /) between items. Mark last item as active (not clickable). If onClick provided, make breadcrumbs clickable.\n4. OUTPUT: Breadcrumbs component displaying form hierarchy read-only."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T1.S2",
+                  "title": "Implement breadcrumb navigation with POP_TO_INDEX",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P2.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 7 - Clicking breadcrumb pops all deeper forms. All popped forms canceled (no values returned). Use POP_TO_INDEX reducer action.\n2. INPUT: Breadcrumbs component from P2.M1.T1.S1. FormStackActions with dispatch access.\n3. LOGIC: Modify Breadcrumbs to accept onClick?: (index: number) => void callback. When breadcrumb clicked (except active), call onClick with index. In FormStackProvider, provide handleBreadcrumbClick = (index: number) => { for (let i = state.stack.length - 1; i > index; i--) { state.stack[i].deferred.resolve(undefined); } dispatch({ type: 'POP_TO_INDEX', index }); }. Pass to Breadcrumbs.\n4. OUTPUT: Clickable breadcrumbs that navigate up stack and cancel intermediate forms."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P2.M2",
+          "title": "Cancellation Confirmation",
+          "status": "Planned",
+          "description": "Add confirmation dialog when canceling forms with confirmOnCancel enabled.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P2.M2.T1",
+              "title": "Implement Confirmation Dialog",
+              "status": "Planned",
+              "description": "Create confirmation dialog component and integrate with cancel flow.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M2.T1.S1",
+                  "title": "Create ConfirmationDialog component",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M6.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 8 - If confirmOnCancel true, show confirmation dialog. On confirm: unmount, resolve undefined. On abort: form remains.\n2. INPUT: React and basic component patterns.\n3. LOGIC: Create src/components/ConfirmationDialog.tsx. Accept props: message: string, onConfirm: () => void, onCancel: () => void. Render modal-like dialog with message text and 'Confirm' / 'Cancel' buttons. Call respective callbacks on button click.\n4. OUTPUT: Reusable confirmation dialog component."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M2.T1.S2",
+                  "title": "Integrate confirmation with cancel flow",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P2.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 8 - confirmOnCancel stored in FormStackItem. Check before canceling. Show dialog if true.\n2. INPUT: InternalStackEntry with confirmOnCancel from P1.M2.T1.S3. ConfirmationDialog from P2.M2.T1.S1.\n3. LOGIC: In FormStackProvider, add state for showing confirmation: const [pendingCancel, setPendingCancel] = useState<number | null>(null). Modify handleCancel to check entry.confirmOnCancel. If true, setPendingCancel(index) instead of dispatching POP. Render ConfirmationDialog when pendingCancel !== null. On confirm, call deferred.resolve(undefined) and dispatch POP. On cancel, dismiss dialog.\n4. OUTPUT: Confirmation dialog flow preventing accidental form cancellation."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P2.M3",
+          "title": "Error Boundaries",
+          "status": "Planned",
+          "description": "Wrap each form in error boundary for isolation and graceful error handling.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P2.M3.T1",
+              "title": "Implement FormErrorBoundary",
+              "status": "Planned",
+              "description": "Create class component error boundary wrapping each form.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M3.T1.S1",
+                  "title": "Create FormErrorBoundary class component",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M6.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/REACT_PATTERNS_RESEARCH_2025.md - Error boundaries MUST be class components (not functional). Use getDerivedStateFromError and componentDidCatch.\n2. INPUT: React Component class and ErrorInfo types.\n3. LOGIC: Create src/components/FormErrorBoundary.tsx. Define class FormErrorBoundary extends React.Component<{ children: ReactNode, onError?: (error: Error) => void, fallback?: ReactNode }, { hasError: boolean, error: Error | null }>. Implement static getDerivedStateFromError returning { hasError: true, error }. Implement componentDidCatch calling onError prop. Render error UI (fallback or default).\n4. OUTPUT: Error boundary class component catching child errors."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M3.T1.S2",
+                  "title": "Integrate error boundary with form rendering",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P2.M3.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 9 - Each form wrapped in error boundary. Errors don't mutate stack. Provider may display retry/dismiss.\n2. INPUT: FormErrorBoundary from P2.M3.T1.S1. FormStackProvider render loop from P1.M5.T1.S1.\n3. LOGIC: In FormStackProvider render loop, wrap each form in <FormErrorBoundary key={entry.id} onError={(error) => { /* handle error */ }}> with fallback UI containing 'Retry' (remount form) and 'Dismiss' (close form) buttons.\n4. OUTPUT: Each form individually wrapped in error boundary with recovery options."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P3",
+      "title": "Phase 3: URL Integration (Optional)",
+      "status": "Planned",
+      "description": "Implement optional query string synchronization for form stack persistence and navigation.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P3.M1",
+          "title": "URL Sync Plugin",
+          "status": "Planned",
+          "description": "Create optional hook for bidirectional sync between form stack and URL query parameters.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P3.M1.T1",
+              "title": "Create useFormStackURLSync Hook",
+              "status": "Planned",
+              "description": "Implement hook syncing stack state to URL query string with throttling.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P3.M1.T1.S1",
+                  "title": "Implement stack to URL encoding",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P2.M3.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/REACT_PATTERNS_RESEARCH_2025.md - Throttle updates to 300ms using useDeferredValue. Simple encoding: form IDs joined by commas. Make react-router-dom optional peer dependency.\n2. INPUT: Stack state from useFormStackState. Optional useSearchParams from react-router-dom.\n3. LOGIC: Create src/hooks/useFormStackURLSync.ts. Accept stack: StackEntry[] and optional syncEnabled: boolean. If not enabled, return early. Try to import useSearchParams from react-router-dom (catch if missing). Use useEffect to watch stack changes. Encode stack: stack.map(e => e.id).join(','). Update URL with setSearchParams({ stack: encoded }). Throttle with useDeferredValue.\n4. OUTPUT: Hook that syncs form stack to URL query string when enabled."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P3.M1.T1.S2",
+                  "title": "Implement URL to stack restoration",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P3.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 11 - URL reflects current form stack. Back/forward navigation supported. Restore stack on mount.\n2. INPUT: Query params from useSearchParams on mount.\n3. LOGIC: In useFormStackURLSync, on mount, read searchParams.get('stack'). If exists, decode: encoded.split(',').map(id => ({ id })). Dispatch 'RESTORE_STACK' action or call openForm for each. Handle invalid IDs gracefully (ignore). Only restore on initial mount, not subsequent URL changes.\n4. OUTPUT: URL-to-stack restoration on initial load supporting back/forward navigation."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P4",
+      "title": "Phase 4: Testing & Quality Assurance",
+      "status": "Planned",
+      "description": "Achieve 85%+ test coverage with unit tests for utilities, hooks, and integration tests for workflows.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P4.M1",
+          "title": "Unit Tests",
+          "status": "Planned",
+          "description": "Unit tests for utilities, reducer, and hooks.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P4.M1.T1",
+              "title": "Test createDeferredPromise Utility",
+              "status": "Planned",
+              "description": "Test promise creation and resolution behavior.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M1.T1.S1",
+                  "title": "Test promise resolution",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P3.M1.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - Previous test: createDeferredPromise.test.ts verified resolve with value, resolve with undefined, reject with error.\n2. INPUT: createDeferredPromise utility from P1.M4.T1.S1.\n3. LOGIC: Create src/__tests__/unit/createDeferredPromise.test.ts. Test 1: Calling resolve(value) resolves promise with value. Test 2: Calling resolve(undefined) resolves promise with undefined. Test 3: Calling reject(reason) rejects promise with reason. Use async/await and expect().resolves/.rejects.\n4. OUTPUT: Passing unit tests for createDeferredPromise utility."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M1.T2",
+              "title": "Test formStackReducer",
+              "status": "Planned",
+              "description": "Test reducer state transitions for all action types.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M1.T2.S1",
+                  "title": "Test reducer actions",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P3.M1.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - Previous test: formStackReducer.test.ts verified PUSH_FORM appends, POP_FORM removes last, POP_TO_INDEX slices to index.\n2. INPUT: formStackReducer from P1.M3.T1.S1.\n3. LOGIC: Create src/__tests__/unit/formStackReducer.test.ts. Test PUSH_FORM: stack length increases by 1, new entry at end. Test POP_FORM: stack length decreases by 1, last entry removed. Test POP_TO_INDEX: stack sliced to index + 1. Test immutability: original state unchanged.\n4. OUTPUT: Passing unit tests for all reducer actions."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M1.T3",
+              "title": "Test useFormStack Hooks",
+              "status": "Planned",
+              "description": "Test context consumption and error handling.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M1.T3.S1",
+                  "title": "Test hook context consumption",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/testing_strategy.md - Use renderHook from @testing-library/react. Test context access and error throwing outside provider.\n2. INPUT: useFormStack, useFormStackState, useFormStackActions from P1.M4.T2.\n3. LOGIC: Create src/__tests__/hooks/useFormStack.test.ts. Test 1: useFormStackState returns stack when used inside provider. Test 2: useFormStackState throws error when used outside provider. Test 3: useFormStackActions returns openForm/closeForm. Test 4: useFormStack returns combined API.\n4. OUTPUT: Passing tests for hook context consumption and error handling."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P4.M2",
+          "title": "Integration Tests",
+          "status": "Planned",
+          "description": "Integration tests for complete workflows: multi-step forms, state preservation, breadcrumbs.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P4.M2.T1",
+              "title": "Test Form Lifecycle Workflow",
+              "status": "Planned",
+              "description": "Test opening forms, submitting, canceling, and promise resolution.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M2.T1.S1",
+                  "title": "Test openForm, submit, and promise resolution",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M1.T3.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/architecture/CODEBASE_STATE.md - Previous integration test: form-flow.test.tsx verified openForm pushes to stack, submit resolves promise, cancel resolves undefined.\n2. INPUT: FormStackProvider, useFormStack, mock test form.\n3. LOGIC: Create src/__tests__/integration/form-flow.test.tsx. Create MockForm component accepting onSubmit/onCancel. Render FormStackProvider with test component. Call openForm with MockForm. Simulate form submission calling onSubmit({ data: 'test' }). Assert promise resolves with { data: 'test' }. Assert stack empty.\n4. OUTPUT: Passing integration test verifying form submit flow."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P4.M2.T1.S2",
+                  "title": "Test cancel returns undefined",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P4.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 3 - Canceling wipes data, returns no value (undefined).\n2. INPUT: Form stack setup from P4.M2.T1.S1.\n3. LOGIC: In form-flow.test.tsx, test cancel flow. Call openForm with MockForm. Simulate cancel calling onCancel(). Assert promise resolves with undefined. Assert stack empty.\n4. OUTPUT: Passing test verifying cancellation resolves with undefined."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M2.T2",
+              "title": "Test Parent State Preservation",
+              "status": "Planned",
+              "description": "Verify parent form state preserved while child form is active.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M2.T2.S1",
+                  "title": "Test parent state preserved across child lifecycle",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M2.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 3 - Parent forms are paused, not destroyed. Only one form visible at a time.\n2. INPUT: ParentForm with input field, ChildForm component.\n3. LOGIC: Create src/__tests__/integration/state-preservation.test.tsx. Create ParentForm with useState storing input value. Render ParentForm inside FormStackProvider. Type 'parent data' into input. Call openForm to open ChildForm. Verify ChildForm visible, ParentForm hidden (display: none). Close ChildForm. Verify ParentForm visible with 'parent data' still in input.\n4. OUTPUT: Passing integration test verifying parent state preservation."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M2.T3",
+              "title": "Test Deep Nesting",
+              "status": "Planned",
+              "description": "Test 3+ levels of form nesting with state preservation at each level.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M2.T3.S1",
+                  "title": "Test 3-level nesting with state preservation",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M2.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 3 - Forms are infinitely nestable. Parent state preserved at each level.\n2. INPUT: Three form components: Level1Form, Level2Form, Level3Form.\n3. LOGIC: Create deep-nesting.test.tsx. Render Level1Form with input. Type 'level1'. Open Level2Form, type 'level2'. Open Level3Form, type 'level3'. Close Level3Form, verify Level2Form shows 'level2'. Close Level2Form, verify Level1Form shows 'level1'.\n4. OUTPUT: Passing integration test verifying state preservation through 3 levels."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M2.T4",
+              "title": "Test Breadcrumb Navigation",
+              "status": "Planned",
+              "description": "Test breadcrumb clicks cancel intermediate forms.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M2.T4.S1",
+                  "title": "Test breadcrumb click cancels intermediate forms",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M2.T3.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 7 - Clicking breadcrumb pops all deeper forms. All popped forms canceled.\n2. INPUT: Form stack with 3 forms, Breadcrumbs component.\n3. LOGIC: Create breadcrumb-nav.test.tsx. Open Form1, Form2, Form3. Click breadcrumb for Form1. Verify Form2 and Form3 removed from stack. Verify Form1 active. Verify promises for Form2/Form3 resolved with undefined.\n4. OUTPUT: Passing integration test verifying breadcrumb navigation."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M2.T5",
+              "title": "Test Error Boundary Isolation",
+              "status": "Planned",
+              "description": "Verify errors caught by boundary don't affect other forms.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M2.T5.S1",
+                  "title": "Test error isolation across forms",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M2.T4.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 9 - Each form wrapped in error boundary. Errors do not mutate stack state.\n2. INPUT: ErrorThrowingForm component, FormStackProvider with error boundaries.\n3. LOGIC: Create error-boundary.test.tsx. Create ErrorThrowingForm that throws in render. Open ParentForm. Open ErrorThrowingForm. Verify error boundary catches error. Verify error UI displayed. Click 'Dismiss' to close error form. Verify ParentForm still functional.\n4. OUTPUT: Passing integration test verifying error isolation and recovery."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P5",
+      "title": "Phase 5: Documentation & Release Preparation",
+      "status": "Planned",
+      "description": "Complete API documentation, examples, README, and prepare for npm release.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P5.M1",
+          "title": "API Documentation",
+          "status": "Planned",
+          "description": "Add comprehensive JSDoc comments to all public APIs.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P5.M1.T1",
+              "title": "Document Public APIs with JSDoc",
+              "status": "Planned",
+              "description": "Add JSDoc comments to FormStackProvider, useFormStack, FormProps.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P5.M1.T1.S1",
+                  "title": "Add JSDoc to FormStackProvider",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P4.M2.T5.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 5.1 - FormStackProvider owns stack, renders active form, injects callbacks, renders breadcrumbs, manages cancellation.\n2. INPUT: FormStackProvider component implementation.\n3. LOGIC: Add JSDoc comment block to FormStackProvider with @component tag. Document props interface: children: ReactNode. Describe responsibilities: stack management, form rendering, callback injection. Add @example showing usage.\n4. OUTPUT: Complete JSDoc documentation for FormStackProvider."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P5.M1.T1.S2",
+                  "title": "Add JSDoc to useFormStack and FormProps",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P5.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Sections 5.2 and 6 - Document openForm<T> return type, FormProps contract.\n2. INPUT: useFormStack hook and FormProps interface.\n3. LOGIC: Add JSDoc to useFormStack with @return { openForm, closeForm, stack }. Document openForm<T>(options): Promise<T | undefined> with @example. Document FormProps<T> interface with onSubmit, onCancel, onError callbacks and example form component.\n4. OUTPUT: Complete JSDoc documentation for useFormStack and FormProps."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P5.M2",
+          "title": "Example Application",
+          "status": "Planned",
+          "description": "Create realistic example demonstrating nested forms with relational data.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P5.M2.T1",
+              "title": "Build Example App with Nested Forms",
+              "status": "Planned",
+              "description": "Create Organization -> Team -> User nested form example.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P5.M2.T1.S1",
+                  "title": "Create example forms (Organization, Team, User)",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P5.M1.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 12 - Example demonstrates creating organization with nested relational data creation in any order.\n2. INPUT: FormStack system implementation.\n3. LOGIC: Create examples/ directory with CreateOrganizationForm.tsx (name, domain fields), CreateTeamForm.tsx (name, orgId fields), CreateUserForm.tsx (name, email fields). Each form uses useState for fields. Each has button to open nested form using useFormStack.\n4. OUTPUT: Three example forms demonstrating 3-level nesting."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P5.M2.T1.S2",
+                  "title": "Create example app entry point",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P5.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 12 - Wrap app in FormStackProvider. Wire openForm calls to demonstrate API.\n2. INPUT: Example forms from P5.M2.T1.S1.\n3. LOGIC: Create examples/App.tsx wrapped in FormStackProvider. Render 'Create Organization' button. Use useFormStack to open CreateOrganizationForm. Display returned values. Show nested form creation flow.\n4. OUTPUT: Complete example app demonstrating full form stack workflow."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P5.M3",
+          "title": "README Documentation",
+          "status": "Planned",
+          "description": "Write comprehensive README with installation, quick start, and API reference.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P5.M3.T1",
+              "title": "Write README.md",
+              "status": "Planned",
+              "description": "Complete project README with all documentation sections.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P5.M3.T1.S1",
+                  "title": "Create comprehensive README",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P5.M2.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 14 Success Criteria - API should feel trivial to use. README must enable developers to quickly understand and use the library.\n2. INPUT: Complete implementation, examples, JSDoc.\n3. LOGIC: Create README.md with sections: Title and description, Installation (npm install geoform), Quick Start example, Basic Usage (FormStackProvider, useFormStack), API Reference (FormStackProvider props, useFormStack return, FormProps interface), TypeScript Support, Example: Nested Forms, Testing, License.\n4. OUTPUT: Comprehensive README.md enabling quick onboarding."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
