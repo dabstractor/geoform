@@ -1,1 +1,1 @@
-export {};
+export { createDeferredPromise } from './createDeferredPromise';
