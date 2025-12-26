@@ -102,21 +102,21 @@
           "type": "Milestone",
           "id": "P1.M2",
           "title": "Core Type Definitions",
-          "status": "Researching",
+          "status": "Complete",
           "description": "Define TypeScript interfaces for form props, stack entries, context types, and deferred promises following previous implementation patterns.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M2.T1",
               "title": "Define FormProps and Core Interfaces",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create the form contract interface that all forms must implement.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T1.S1",
                   "title": "Define FormProps<T> interface",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Section 6 and plan/architecture/CODEBASE_STATE.md - FormProps<T> with onSubmit: (value: T) => void, onCancel: () => void, onError?: (error: unknown) => void. Use generic T with default=unknown.\n2. INPUT: TypeScript configuration and src/types directory.\n3. LOGIC: Create src/types/form.ts. Export interface FormProps<T = unknown> with onSubmit callback (value: T) => void, onCancel callback () => void, optional onError callback (error: unknown) => void.\n4. OUTPUT: FormProps<T> interface defining the contract all forms must accept."
@@ -125,7 +125,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S2",
                   "title": "Define DeferredPromise<T> interface",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T1.S1"
@@ -136,7 +136,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S3",
                   "title": "Define StackEntry and OpenFormOptions interfaces",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T1.S2"
@@ -149,14 +149,14 @@
               "type": "Task",
               "id": "P1.M2.T2",
               "title": "Define Context Types",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create TypeScript types for the dual-context pattern (state context and actions context).",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T2.S1",
                   "title": "Define FormStackState and FormStackActions interfaces",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T1.S3"
@@ -167,7 +167,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T2.S2",
                   "title": "Define reducer action types",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T2.S1"
