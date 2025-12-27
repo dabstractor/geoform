@@ -364,21 +364,21 @@
           "type": "Milestone",
           "id": "P1.M6",
           "title": "Public API Export",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Create main entry point with public API exports.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M6.T1",
               "title": "Create src/index.ts barrel export",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Export public API from main entry point.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M6.T1.S1",
                   "title": "Export public API from index.ts",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M5.T1.S3"
