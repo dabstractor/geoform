@@ -1,7 +1,9 @@
 import { useReducer, useMemo, useCallback, type ReactNode } from 'react';
 import { formStackReducer, initialFormStackState } from '../context/formStackReducer';
 import { FormStackStateContext, FormStackActionsContext } from '../context/FormStackContext';
-import type { FormStackState, FormStackActions, OpenFormOptions } from '../types';
+import { FormStackRenderer } from './FormStackRenderer';
+import { createDeferredPromise } from '../utils';
+import type { FormStackState, FormStackActions, OpenFormOptions, InternalStackEntry } from '../types';
 
 /**
  * Props for FormStackProvider component.
@@ -34,14 +36,25 @@ export function FormStackProvider({ children }: FormStackProviderProps) {
     })),
   }), [state.stack]);
 
-  // Placeholder implementations for openForm and closeForm
-  // Will be fully implemented in P1.M4/P1.M5 with createDeferredPromise
-  const openForm = useCallback(<T,>(_options: OpenFormOptions<T>): Promise<T | undefined> => {
-    // TODO: P1.M5 - Implement with createDeferredPromise
-    // For now, dispatch PUSH_FORM and return a resolved promise
-    // This placeholder allows the type system to work correctly
-    console.warn('openForm not fully implemented - see P1.M5');
-    return Promise.resolve(undefined);
+  // Full openForm implementation with deferred promise
+  const openForm = useCallback(<T,>(options: OpenFormOptions<T>): Promise<T | undefined> => {
+    // Create deferred promise for async resolution
+    const deferred = createDeferredPromise<T>();
+
+    // Create internal stack entry
+    const entry: InternalStackEntry<T> = {
+      id: options.id,
+      label: options.label,
+      component: options.component,
+      confirmOnCancel: options.confirmOnCancel ?? false,
+      deferred,
+    };
+
+    // Push form onto stack (cast to unknown for reducer type compatibility)
+    dispatch({ type: 'PUSH_FORM', entry: entry as InternalStackEntry<unknown> });
+
+    // Return promise immediately - caller awaits
+    return deferred.promise;
   }, []);
 
   const closeForm = useCallback(() => {
@@ -58,6 +71,10 @@ export function FormStackProvider({ children }: FormStackProviderProps) {
     <FormStackStateContext.Provider value={stateValue}>
       <FormStackActionsContext.Provider value={actionsValue}>
         {children}
+        <FormStackRenderer
+          stack={state.stack}
+          onClose={closeForm}
+        />
       </FormStackActionsContext.Provider>
     </FormStackStateContext.Provider>
   );
