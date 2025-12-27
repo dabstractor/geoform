@@ -18,9 +18,14 @@ interface PendingConfirmation {
 
 /**
  * Props for FormStackProvider component.
+ *
+ * @see {@link FormStackProvider} - Component that accepts these props
  */
 export interface FormStackProviderProps {
-  /** Child components that will have access to form stack context */
+  /**
+   * Child components that will have access to form stack context.
+   * All children can use useFormStack, useFormStackState, or useFormStackActions.
+   */
   children: ReactNode;
 }
 
@@ -29,11 +34,26 @@ export interface FormStackProviderProps {
  * Uses dual-context pattern to separate state from actions,
  * minimizing re-renders for components that only dispatch actions.
  *
+ * Wrap your application with this component to enable form stack functionality.
+ * All descendant components can then use the form stack hooks.
+ *
+ * @see {@link useFormStack} - Primary hook for form interactions
+ * @see {@link useFormStackState} - Read-only state access
+ * @see {@link useFormStackActions} - Actions without state subscription
+ * @see {@link Breadcrumbs} - Navigation component for stack
+ * @see {@link FormProps} - Interface forms must implement
+ *
  * @example
  * ```tsx
- * <FormStackProvider>
- *   <App />
- * </FormStackProvider>
+ * import { FormStackProvider } from 'geoform';
+ *
+ * function App() {
+ *   return (
+ *     <FormStackProvider>
+ *       <YourApp />
+ *     </FormStackProvider>
+ *   );
+ * }
  * ```
  */
 export function FormStackProvider({ children }: FormStackProviderProps) {

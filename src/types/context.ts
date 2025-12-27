@@ -3,6 +3,13 @@ import type { StackEntry, OpenFormOptions, InternalStackEntry } from './stack';
 /**
  * Read-only state exposed by FormStackStateContext.
  * Used by components that need to read stack state (e.g., Breadcrumbs).
+ *
+ * Separated from FormStackActions to enable context splitting pattern -
+ * components reading state won't re-render when actions are called.
+ *
+ * @see {@link useFormStackState} - Hook to access this state
+ * @see {@link useFormStack} - Combined hook for state + actions
+ * @see {@link Breadcrumbs} - Component that reads stack state
  */
 export interface FormStackState {
   /** Current form stack (read-only to prevent mutations) */
@@ -12,6 +19,13 @@ export interface FormStackState {
 /**
  * Actions exposed by FormStackActionsContext.
  * Separated from state to minimize re-renders (context splitting pattern).
+ *
+ * Components that only dispatch actions (don't read state) can use
+ * useFormStackActions to avoid re-rendering on stack changes.
+ *
+ * @see {@link useFormStackActions} - Hook to access these actions
+ * @see {@link useFormStack} - Combined hook for state + actions
+ * @see {@link FormStackProvider} - Provider that supplies these actions
  */
 export interface FormStackActions {
   /**

@@ -3,7 +3,14 @@ import type { FormProps, DeferredPromise } from './form';
 
 /**
  * Public view of a stack entry for breadcrumb rendering.
- * Consumers see this via useFormStack().stack
+ * Consumers see this read-only array via useFormStack().stack or useFormStackState().
+ *
+ * This is the sanitized version of InternalStackEntry - it excludes
+ * implementation details like the component reference and deferred promise.
+ *
+ * @see {@link useFormStack} - Returns stack as readonly StackEntry[]
+ * @see {@link Breadcrumbs} - Component that renders StackEntry array
+ * @see {@link InternalStackEntry} - Full internal representation
  */
 export interface StackEntry {
   /** Unique identifier for the form */
@@ -14,7 +21,30 @@ export interface StackEntry {
 
 /**
  * Options passed to openForm() to open a new form.
- * @template T - The type of value the form will return
+ *
+ * @template T - The type of value the form will return. Must match the
+ *               component's FormProps<T> type parameter. The openForm()
+ *               Promise resolves with this type (or undefined on cancel).
+ *
+ * @see {@link FormProps} - Props interface the component must accept
+ * @see {@link useFormStack} - Hook providing openForm() method
+ * @see {@link StackEntry} - Public view of opened form in stack
+ *
+ * @example
+ * ```tsx
+ * interface UserData { name: string; email: string; }
+ *
+ * const result = await openForm<UserData>({
+ *   id: 'create-user',
+ *   component: UserForm,  // Must be FormProps<UserData>
+ *   label: 'Create User',
+ *   confirmOnCancel: true,
+ * });
+ *
+ * if (result) {
+ *   console.log('Created:', result.name); // Typed as UserData
+ * }
+ * ```
  */
 export interface OpenFormOptions<T = unknown> {
   /** Unique identifier for this form instance */
@@ -30,7 +60,18 @@ export interface OpenFormOptions<T = unknown> {
 /**
  * Internal representation of a stack entry.
  * Extends StackEntry with implementation details (not exposed publicly).
- * @template T - The type of value the form will return
+ *
+ * This is used internally by FormStackProvider to manage the form lifecycle.
+ * Consumers should use the public StackEntry interface instead.
+ *
+ * @template T - The type of value the form will return.
+ *               Flows through from OpenFormOptions<T> to DeferredPromise<T>.
+ *
+ * @see {@link StackEntry} - Public view (id and label only)
+ * @see {@link OpenFormOptions} - Input options that create this entry
+ * @see {@link DeferredPromise} - Async resolution mechanism
+ *
+ * @internal
  */
 export interface InternalStackEntry<T = unknown> extends StackEntry {
   /** The form component to render */

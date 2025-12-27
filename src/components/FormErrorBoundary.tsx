@@ -36,6 +36,13 @@ interface FormErrorBoundaryState {
  * require getDerivedStateFromError and componentDidCatch which are only
  * available in class components.
  *
+ * Each form in the stack is wrapped with its own error boundary, ensuring
+ * that a crash in one form doesn't affect parent forms.
+ *
+ * @see {@link FormStackRenderer} - Uses this to wrap each form
+ * @see {@link FormErrorBoundaryProps} - Configuration props
+ * @see https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary
+ *
  * @example
  * ```tsx
  * <FormErrorBoundary
@@ -61,8 +68,17 @@ export class FormErrorBoundary extends Component<
   }
 
   /**
-   * Static lifecycle method called during render phase.
-   * CRITICAL: No side effects allowed - pure state update only.
+   * Static lifecycle method called during React's render phase.
+   * Updates state to show fallback UI on the next render.
+   *
+   * CRITICAL: No side effects allowed in this method (no logging, no callbacks).
+   * This method runs during the "render" phase, before the DOM is updated.
+   * Side effects (logging, error callbacks) must be in componentDidCatch instead.
+   *
+   * @param error - The error that was thrown during rendering
+   * @returns Partial state update to trigger error UI display
+   *
+   * @see https://react.dev/reference/react/Component#static-getderivedstatefromerror
    */
   static getDerivedStateFromError(error: Error): Partial<FormErrorBoundaryState> {
     return {
@@ -72,8 +88,16 @@ export class FormErrorBoundary extends Component<
   }
 
   /**
-   * Called during commit phase after render.
-   * Side effects (logging, callbacks) are allowed here.
+   * Called during React's commit phase after the DOM has been updated.
+   * Side effects (logging, callbacks, external API calls) are allowed here.
+   *
+   * This method receives the error and component stack trace, making it
+   * ideal for error logging services like Sentry or LogRocket.
+   *
+   * @param error - The error that was thrown during rendering
+   * @param errorInfo - Contains componentStack with the component tree trace
+   *
+   * @see https://react.dev/reference/react/Component#componentdidcatch
    */
   override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Call optional error callback for logging
