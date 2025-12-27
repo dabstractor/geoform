@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { useFormStack } from '../useFormStack';
 import { FormStackProvider } from '../../components';
@@ -44,13 +44,16 @@ describe('useFormStack', () => {
       const { result } = renderHook(() => useFormStack(), { wrapper });
 
       // Act
-      const returnValue = result.current.openForm({
-        id: 'test',
-        component: () => null,
+      let returnValue: Promise<unknown>;
+      act(() => {
+        returnValue = result.current.openForm({
+          id: 'test',
+          component: () => null,
+        });
       });
 
       // Assert
-      expect(returnValue).toBeInstanceOf(Promise);
+      expect(returnValue!).toBeInstanceOf(Promise);
     });
   });
 
