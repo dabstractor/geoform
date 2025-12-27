@@ -166,6 +166,43 @@ export { useFormStackActions } from './hooks';
  */
 export type { UseFormStackReturn } from './hooks';
 
+/**
+ * Hook for bidirectional sync between form stack and URL query parameters.
+ * Enables shareable URLs, bookmarking, and browser back/forward navigation.
+ *
+ * @example
+ * ```tsx
+ * import { FormStackProvider, useFormStackURLSync } from 'geoform';
+ *
+ * function App() {
+ *   return (
+ *     <FormStackProvider>
+ *       <URLSyncedApp />
+ *     </FormStackProvider>
+ *   );
+ * }
+ *
+ * function URLSyncedApp() {
+ *   // Enable URL sync - forms now appear in URL as ?forms=form1,form2
+ *   useFormStackURLSync();
+ *
+ *   // Rest of your app
+ *   return <YourApp />;
+ * }
+ * ```
+ */
+export { useFormStackURLSync } from './hooks';
+
+/**
+ * Options for useFormStackURLSync hook.
+ */
+export type { UseFormStackURLSyncOptions } from './hooks';
+
+/**
+ * Return type for useFormStackURLSync hook.
+ */
+export type { UseFormStackURLSyncReturn } from './hooks';
+
 // ===== Types =====
 
 /**

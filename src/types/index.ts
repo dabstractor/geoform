@@ -11,3 +11,9 @@ export type {
   FormStackAction,
   FormStackReducerState,
 } from './context';
+
+// URL Sync types
+export type {
+  UseFormStackURLSyncOptions,
+  UseFormStackURLSyncReturn,
+} from '../hooks/useFormStackURLSync';
