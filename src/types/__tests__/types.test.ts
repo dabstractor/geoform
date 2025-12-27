@@ -118,16 +118,18 @@ describe('Type Definitions', () => {
   });
 
   describe('FormStackActions', () => {
-    it('should have openForm and closeForm methods', () => {
+    it('should have openForm, closeForm, and popToIndex methods', () => {
       // Type-level test to verify interface structure
       const mockActions: FormStackActions = {
         openForm: async <T>(_options: OpenFormOptions<T>) =>
           undefined as T | undefined,
         closeForm: () => {},
+        popToIndex: (_index: number) => {},
       };
 
       expect(typeof mockActions.openForm).toBe('function');
       expect(typeof mockActions.closeForm).toBe('function');
+      expect(typeof mockActions.popToIndex).toBe('function');
     });
   });
 

@@ -25,6 +25,13 @@ export interface FormStackActions {
    * Closes the current form (internal use - forms use onSubmit/onCancel instead).
    */
   closeForm: () => void;
+  /**
+   * Navigates to a specific form in the stack by index.
+   * All forms after the target index are cancelled (resolved with undefined).
+   * Used by Breadcrumbs component for direct navigation.
+   * @param index - Zero-based index of the target form
+   */
+  popToIndex: (index: number) => void;
 }
 
 /**

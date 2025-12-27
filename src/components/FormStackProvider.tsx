@@ -61,11 +61,32 @@ export function FormStackProvider({ children }: FormStackProviderProps) {
     dispatch({ type: 'POP_FORM' });
   }, []);
 
+  // Navigate to specific form, cancelling all deeper forms
+  const popToIndex = useCallback((index: number) => {
+    // Validate index bounds
+    if (index < 0 || index >= state.stack.length) {
+      return;
+    }
+
+    // Cancel all forms after the target index (resolve with undefined)
+    // Iterate in reverse to maintain correct order
+    for (let i = state.stack.length - 1; i > index; i--) {
+      const entry = state.stack[i];
+      if (entry) {
+        entry.deferred.resolve(undefined);
+      }
+    }
+
+    // Dispatch the action to update stack
+    dispatch({ type: 'POP_TO_INDEX', index });
+  }, [state.stack]);
+
   // Memoize actions value to prevent re-renders
   const actionsValue = useMemo<FormStackActions>(() => ({
     openForm,
     closeForm,
-  }), [openForm, closeForm]);
+    popToIndex,
+  }), [openForm, closeForm, popToIndex]);
 
   return (
     <FormStackStateContext.Provider value={stateValue}>

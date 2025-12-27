@@ -34,6 +34,30 @@ export { FormStackProvider } from './components';
  */
 export type { FormStackProviderProps } from './components';
 
+/**
+ * Breadcrumbs component for displaying form stack navigation.
+ * Clicking a breadcrumb navigates to that form, cancelling all deeper forms.
+ *
+ * @example
+ * ```tsx
+ * import { Breadcrumbs } from 'geoform';
+ *
+ * function Header() {
+ *   return (
+ *     <header>
+ *       <Breadcrumbs separator=" › " />
+ *     </header>
+ *   );
+ * }
+ * ```
+ */
+export { Breadcrumbs } from './components';
+
+/**
+ * Props for Breadcrumbs component.
+ */
+export type { BreadcrumbsProps } from './components';
+
 // ===== Hooks =====
 
 /**
