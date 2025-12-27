@@ -1,5 +1,6 @@
 import { createElement, type ReactElement } from 'react';
 import type { InternalStackEntry, FormProps } from '../types';
+import { FormErrorBoundary } from './FormErrorBoundary';
 
 /**
  * Props for FormStackRenderer component.
@@ -73,7 +74,21 @@ export function FormStackRenderer({ stack, onClose, onCancelRequest }: FormStack
             aria-hidden={!isActive}
             data-form-id={entry.id}
           >
-            {createElement(entry.component, formProps)}
+            <FormErrorBoundary
+              formId={entry.id}
+              onDismiss={() => {
+                // Same behavior as cancel - resolve with undefined
+                entry.deferred.resolve(undefined);
+                onClose();
+              }}
+              onError={(error, errorInfo) => {
+                // Log but don't auto-close - user can retry or dismiss
+                console.error(`[FormStack] Error in form ${entry.id}:`, error);
+                console.error('Component stack:', errorInfo.componentStack);
+              }}
+            >
+              {createElement(entry.component, formProps)}
+            </FormErrorBoundary>
           </div>
         );
       })}

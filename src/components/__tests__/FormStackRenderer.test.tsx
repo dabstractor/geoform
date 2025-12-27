@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { FormStackRenderer } from '../FormStackRenderer';
 import type { InternalStackEntry, FormProps, DeferredPromise } from '../../types';
@@ -209,6 +209,160 @@ describe('FormStackRenderer', () => {
       expect(screen.getByTestId('form-unique-id-2').parentElement).toHaveAttribute(
         'data-form-id',
         'unique-id-2'
+      );
+    });
+  });
+
+  describe('error boundary integration', () => {
+    // Suppress console.error for expected errors in this block
+    const originalError = console.error;
+
+    beforeEach(() => {
+      console.error = vi.fn();
+    });
+
+    afterEach(() => {
+      console.error = originalError;
+    });
+
+    // Helper to create an error-throwing entry
+    const createErrorThrowingEntry = (
+      id: string,
+      deferred?: DeferredPromise<unknown>
+    ): InternalStackEntry<unknown> => ({
+      id,
+      label: `Error Form ${id}`,
+      component: () => {
+        throw new Error(`Error in form ${id}`);
+      },
+      confirmOnCancel: false,
+      deferred: deferred ?? createMockDeferred(),
+    });
+
+    it('should catch error and display fallback when form throws', () => {
+      // Arrange
+      const stack = [createErrorThrowingEntry('error-form')];
+      const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
+
+      // Act
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
+
+      // Assert
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+      expect(screen.getByText('Error in form error-form')).toBeInTheDocument();
+    });
+
+    it('should call onClose when dismiss is clicked after error', () => {
+      // Arrange
+      const deferred = createMockDeferred<unknown>();
+      const resolveSpy = vi.spyOn(deferred, 'resolve');
+      const stack = [createErrorThrowingEntry('error-form', deferred)];
+      const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
+
+      // Act
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+
+      // Assert
+      expect(resolveSpy).toHaveBeenCalledWith(undefined);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('should resolve deferred with undefined on dismiss', () => {
+      // Arrange
+      const deferred = createMockDeferred<unknown>();
+      const resolveSpy = vi.spyOn(deferred, 'resolve');
+      const stack = [createErrorThrowingEntry('error-form', deferred)];
+      const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
+
+      // Act
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+
+      // Assert
+      expect(resolveSpy).toHaveBeenCalledWith(undefined);
+    });
+
+    it('should allow retry after error when component recovers', () => {
+      // Arrange - use rerender to simulate recovery
+      let shouldThrow = true;
+      const recoveryEntry: InternalStackEntry<unknown> = {
+        id: 'recovery-form',
+        label: 'Recovery Form',
+        component: ({ onSubmit }: FormProps<unknown>) => {
+          if (shouldThrow) {
+            throw new Error('Form error');
+          }
+          return (
+            <div data-testid="recovered-form">
+              <button onClick={() => onSubmit('recovered')}>Submit</button>
+            </div>
+          );
+        },
+        confirmOnCancel: false,
+        deferred: createMockDeferred(),
+      };
+      const stack = [recoveryEntry];
+      const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
+
+      // Act - render and retry
+      const { rerender } = render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
+
+      // Initially shows error
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+
+      // Simulate the issue being fixed
+      shouldThrow = false;
+
+      // Trigger a rerender to pick up the change (simulating prop/state update)
+      rerender(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
+
+      // Click retry
+      fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+
+      // Assert - form recovered
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByTestId('recovered-form')).toBeInTheDocument();
+    });
+
+    it('should not affect other forms when one form errors', () => {
+      // Arrange - stack with normal form and error form
+      const normalEntry = createMockEntry('normal-form', 'Normal Form');
+      const errorEntry = createErrorThrowingEntry('error-form');
+      const stack = [normalEntry, errorEntry];
+      const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
+
+      // Act
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
+
+      // Assert - error form shows error, normal form still exists
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByTestId('form-normal-form')).toBeInTheDocument();
+    });
+
+    it('should log error to console when form throws', () => {
+      // Arrange
+      const stack = [createErrorThrowingEntry('test-error-form')];
+      const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
+
+      // Act
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
+
+      // Assert - console.error was called with error info
+      expect(console.error).toHaveBeenCalledWith(
+        '[FormStack] Error in form test-error-form:',
+        expect.any(Error)
+      );
+      expect(console.error).toHaveBeenCalledWith(
+        'Component stack:',
+        expect.any(String)
       );
     });
   });

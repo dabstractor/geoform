@@ -86,6 +86,36 @@ export { ConfirmationDialog } from './components';
  */
 export type { ConfirmationDialogProps } from './components';
 
+/**
+ * Error boundary component for form error isolation.
+ * Automatically wraps forms in FormStackProvider.
+ * Export for advanced customization use cases.
+ *
+ * @example
+ * ```tsx
+ * import { FormErrorBoundary } from 'geoform';
+ *
+ * // Custom wrapper with additional error handling
+ * function CustomFormWrapper({ children }) {
+ *   return (
+ *     <FormErrorBoundary
+ *       formId="custom-form"
+ *       onDismiss={handleDismiss}
+ *       onError={(error, info) => logToService(error)}
+ *     >
+ *       {children}
+ *     </FormErrorBoundary>
+ *   );
+ * }
+ * ```
+ */
+export { FormErrorBoundary } from './components';
+
+/**
+ * Props for FormErrorBoundary component.
+ */
+export type { FormErrorBoundaryProps } from './components';
+
 // ===== Hooks =====
 
 /**

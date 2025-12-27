@@ -482,21 +482,21 @@
           "type": "Milestone",
           "id": "P2.M3",
           "title": "Error Boundaries",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Wrap each form in error boundary for isolation and graceful error handling.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M3.T1",
               "title": "Implement FormErrorBoundary",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create class component error boundary wrapping each form.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M3.T1.S1",
                   "title": "Create FormErrorBoundary class component",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M6.T1.S1"
@@ -507,7 +507,7 @@
                   "type": "Subtask",
                   "id": "P2.M3.T1.S2",
                   "title": "Integrate error boundary with form rendering",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M3.T1.S1"

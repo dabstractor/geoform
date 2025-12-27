@@ -9,3 +9,6 @@ export type { BreadcrumbsProps } from './Breadcrumbs';
 
 export { ConfirmationDialog } from './ConfirmationDialog';
 export type { ConfirmationDialogProps } from './ConfirmationDialog';
+
+export { FormErrorBoundary } from './FormErrorBoundary';
+export type { FormErrorBoundaryProps } from './FormErrorBoundary';
