@@ -1,9 +1,20 @@
-import { useReducer, useMemo, useCallback, type ReactNode } from 'react';
+import { useReducer, useMemo, useCallback, useState, type ReactNode } from 'react';
 import { formStackReducer, initialFormStackState } from '../context/formStackReducer';
 import { FormStackStateContext, FormStackActionsContext } from '../context/FormStackContext';
 import { FormStackRenderer } from './FormStackRenderer';
+import { ConfirmationDialog } from './ConfirmationDialog';
 import { createDeferredPromise } from '../utils';
 import type { FormStackState, FormStackActions, OpenFormOptions, InternalStackEntry } from '../types';
+
+/**
+ * State for a pending confirmation dialog.
+ */
+interface PendingConfirmation {
+  /** Form names/IDs that would be cancelled */
+  affectedForms: string[];
+  /** Callback when user responds */
+  resolve: (confirmed: boolean) => void;
+}
 
 /**
  * Props for FormStackProvider component.
@@ -27,6 +38,14 @@ export interface FormStackProviderProps {
  */
 export function FormStackProvider({ children }: FormStackProviderProps) {
   const [state, dispatch] = useReducer(formStackReducer, initialFormStackState);
+  const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
+
+  // Request confirmation from user - returns Promise that resolves when user responds
+  const requestConfirmation = useCallback((affectedForms: string[]): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setPendingConfirmation({ affectedForms, resolve });
+    });
+  }, []);
 
   // Convert internal stack to public stack view (without internal details)
   const stateValue = useMemo<FormStackState>(() => ({
@@ -62,10 +81,25 @@ export function FormStackProvider({ children }: FormStackProviderProps) {
   }, []);
 
   // Navigate to specific form, cancelling all deeper forms
-  const popToIndex = useCallback((index: number) => {
+  const popToIndex = useCallback(async (index: number) => {
     // Validate index bounds
     if (index < 0 || index >= state.stack.length) {
       return;
+    }
+
+    // Get forms that will be cancelled
+    const formsToCancel = state.stack.slice(index + 1);
+
+    // Check if any require confirmation
+    const formsNeedingConfirmation = formsToCancel.filter(e => e.confirmOnCancel);
+
+    if (formsNeedingConfirmation.length > 0) {
+      const confirmed = await requestConfirmation(
+        formsNeedingConfirmation.map(f => f.label ?? f.id)
+      );
+      if (!confirmed) {
+        return; // User cancelled, don't proceed
+      }
     }
 
     // Cancel all forms after the target index (resolve with undefined)
@@ -79,7 +113,30 @@ export function FormStackProvider({ children }: FormStackProviderProps) {
 
     // Dispatch the action to update stack
     dispatch({ type: 'POP_TO_INDEX', index });
-  }, [state.stack]);
+  }, [state.stack, requestConfirmation]);
+
+  // Handler for cancel confirmation from FormStackRenderer
+  const handleCancelRequest = useCallback(async (entry: InternalStackEntry<unknown>): Promise<boolean> => {
+    if (entry.confirmOnCancel) {
+      return requestConfirmation([entry.label ?? entry.id]);
+    }
+    return true; // No confirmation needed
+  }, [requestConfirmation]);
+
+  // Confirmation dialog handlers
+  const handleConfirmationConfirm = useCallback(() => {
+    if (pendingConfirmation) {
+      pendingConfirmation.resolve(true);
+      setPendingConfirmation(null);
+    }
+  }, [pendingConfirmation]);
+
+  const handleConfirmationCancel = useCallback(() => {
+    if (pendingConfirmation) {
+      pendingConfirmation.resolve(false);
+      setPendingConfirmation(null);
+    }
+  }, [pendingConfirmation]);
 
   // Memoize actions value to prevent re-renders
   const actionsValue = useMemo<FormStackActions>(() => ({
@@ -95,6 +152,18 @@ export function FormStackProvider({ children }: FormStackProviderProps) {
         <FormStackRenderer
           stack={state.stack}
           onClose={closeForm}
+          onCancelRequest={handleCancelRequest}
+        />
+        <ConfirmationDialog
+          isOpen={pendingConfirmation !== null}
+          title={
+            pendingConfirmation && pendingConfirmation.affectedForms.length > 1
+              ? `Discard Changes to ${pendingConfirmation.affectedForms.length} Forms?`
+              : 'Discard Changes?'
+          }
+          message="Your unsaved changes will be lost."
+          onConfirm={handleConfirmationConfirm}
+          onCancel={handleConfirmationCancel}
         />
       </FormStackActionsContext.Provider>
     </FormStackStateContext.Provider>

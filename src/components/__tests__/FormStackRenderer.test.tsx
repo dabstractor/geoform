@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { FormStackRenderer } from '../FormStackRenderer';
 import type { InternalStackEntry, FormProps, DeferredPromise } from '../../types';
+
+// Default mock for onCancelRequest - always confirms
+const createMockCancelRequest = () => vi.fn().mockResolvedValue(true);
 
 // Helper to create mock deferred promise
 const createMockDeferred = <T,>(): DeferredPromise<T> => {
@@ -48,10 +51,11 @@ describe('FormStackRenderer', () => {
     it('should render nothing', () => {
       // Arrange
       const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
 
       // Act
       const { container } = render(
-        <FormStackRenderer stack={[]} onClose={onClose} />
+        <FormStackRenderer stack={[]} onClose={onClose} onCancelRequest={onCancelRequest} />
       );
 
       // Assert
@@ -64,9 +68,10 @@ describe('FormStackRenderer', () => {
       // Arrange
       const stack = [createMockEntry('form-1', 'Form 1')];
       const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
 
       // Act
-      render(<FormStackRenderer stack={stack} onClose={onClose} />);
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
 
       // Assert
       expect(screen.getByTestId('form-form-1')).toBeInTheDocument();
@@ -84,9 +89,10 @@ describe('FormStackRenderer', () => {
         createMockEntry('form-2', 'Form 2'),
       ];
       const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
 
       // Act
-      render(<FormStackRenderer stack={stack} onClose={onClose} />);
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
 
       // Assert - both forms are in DOM
       expect(screen.getByTestId('form-form-1')).toBeInTheDocument();
@@ -111,9 +117,10 @@ describe('FormStackRenderer', () => {
         createMockEntry('form-3'),
       ];
       const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
 
       // Act
-      render(<FormStackRenderer stack={stack} onClose={onClose} />);
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
 
       // Assert - only form-3 visible
       expect(screen.getByTestId('form-form-1').parentElement).toHaveStyle('display: none');
@@ -129,9 +136,10 @@ describe('FormStackRenderer', () => {
       const resolveSpy = vi.spyOn(deferred, 'resolve');
       const stack = [createMockEntry('form-1', 'Form 1', deferred as DeferredPromise<unknown>)];
       const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
 
       // Act
-      render(<FormStackRenderer stack={stack} onClose={onClose} />);
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
       fireEvent.click(screen.getByTestId('submit-form-1'));
 
       // Assert
@@ -139,20 +147,44 @@ describe('FormStackRenderer', () => {
       expect(onClose).toHaveBeenCalled();
     });
 
-    it('should resolve deferred promise with undefined on cancel', async () => {
+    it('should resolve deferred promise with undefined on cancel when confirmed', async () => {
       // Arrange
       const deferred = createMockDeferred<unknown>();
       const resolveSpy = vi.spyOn(deferred, 'resolve');
       const stack = [createMockEntry('form-1', 'Form 1', deferred)];
       const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
 
       // Act
-      render(<FormStackRenderer stack={stack} onClose={onClose} />);
-      fireEvent.click(screen.getByTestId('cancel-form-1'));
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('cancel-form-1'));
+      });
 
       // Assert
+      expect(onCancelRequest).toHaveBeenCalled();
       expect(resolveSpy).toHaveBeenCalledWith(undefined);
       expect(onClose).toHaveBeenCalled();
+    });
+
+    it('should not resolve deferred promise when cancel is rejected', async () => {
+      // Arrange
+      const deferred = createMockDeferred<unknown>();
+      const resolveSpy = vi.spyOn(deferred, 'resolve');
+      const stack = [createMockEntry('form-1', 'Form 1', deferred)];
+      const onClose = vi.fn();
+      const onCancelRequest = vi.fn().mockResolvedValue(false); // Reject cancellation
+
+      // Act
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('cancel-form-1'));
+      });
+
+      // Assert
+      expect(onCancelRequest).toHaveBeenCalled();
+      expect(resolveSpy).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
     });
   });
 
@@ -164,9 +196,10 @@ describe('FormStackRenderer', () => {
         createMockEntry('unique-id-2', 'Form 2'),
       ];
       const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
 
       // Act
-      render(<FormStackRenderer stack={stack} onClose={onClose} />);
+      render(<FormStackRenderer stack={stack} onClose={onClose} onCancelRequest={onCancelRequest} />);
 
       // Assert - check data-form-id attribute matches id
       expect(screen.getByTestId('form-unique-id-1').parentElement).toHaveAttribute(

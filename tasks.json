@@ -442,21 +442,21 @@
           "type": "Milestone",
           "id": "P2.M2",
           "title": "Cancellation Confirmation",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Add confirmation dialog when canceling forms with confirmOnCancel enabled.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M2.T1",
               "title": "Implement Confirmation Dialog",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create confirmation dialog component and integrate with cancel flow.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M2.T1.S1",
                   "title": "Create ConfirmationDialog component",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M6.T1.S1"
@@ -467,7 +467,7 @@
                   "type": "Subtask",
                   "id": "P2.M2.T1.S2",
                   "title": "Integrate confirmation with cancel flow",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P2.M2.T1.S1"

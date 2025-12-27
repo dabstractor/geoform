@@ -58,6 +58,34 @@ export { Breadcrumbs } from './components';
  */
 export type { BreadcrumbsProps } from './components';
 
+/**
+ * Confirmation dialog component for cancellation confirmation.
+ * Displays accessible modal dialog when forms with confirmOnCancel are cancelled.
+ *
+ * @example
+ * ```tsx
+ * import { ConfirmationDialog } from 'geoform';
+ *
+ * function CustomConfirmDialog() {
+ *   return (
+ *     <ConfirmationDialog
+ *       isOpen={showConfirm}
+ *       title="Discard Changes?"
+ *       message="Your unsaved changes will be lost."
+ *       onConfirm={handleConfirm}
+ *       onCancel={handleCancel}
+ *     />
+ *   );
+ * }
+ * ```
+ */
+export { ConfirmationDialog } from './components';
+
+/**
+ * Props for ConfirmationDialog component.
+ */
+export type { ConfirmationDialogProps } from './components';
+
 // ===== Hooks =====
 
 /**

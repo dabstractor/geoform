@@ -9,6 +9,8 @@ export interface FormStackRendererProps {
   stack: InternalStackEntry<unknown>[];
   /** Callback when form is closed (pops from stack) */
   onClose: () => void;
+  /** Request confirmation before cancelling - returns true if confirmed */
+  onCancelRequest: (entry: InternalStackEntry<unknown>) => Promise<boolean>;
 }
 
 /**
@@ -24,7 +26,7 @@ export interface FormStackRendererProps {
  * />
  * ```
  */
-export function FormStackRenderer({ stack, onClose }: FormStackRendererProps): ReactElement | null {
+export function FormStackRenderer({ stack, onClose, onCancelRequest }: FormStackRendererProps): ReactElement | null {
   // No forms to render
   if (stack.length === 0) {
     return null;
@@ -41,7 +43,12 @@ export function FormStackRenderer({ stack, onClose }: FormStackRendererProps): R
           onClose();
         };
 
-        const handleCancel = () => {
+        const handleCancel = async () => {
+          // Check if confirmation is needed
+          const confirmed = await onCancelRequest(entry);
+          if (!confirmed) {
+            return; // User cancelled confirmation, stay on form
+          }
           entry.deferred.resolve(undefined);
           onClose();
         };
