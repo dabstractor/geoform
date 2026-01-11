@@ -80,7 +80,7 @@
           "type": "Milestone",
           "id": "P1.M2",
           "title": "Fix URL Sync Race Condition",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement race condition mitigation in useFormStackURLSync hook to prevent inconsistent state during rapid form open/close operations combined with browser back button navigation.",
           "tasks": [
             {
@@ -116,7 +116,7 @@
               "type": "Task",
               "id": "P1.M2.T2",
               "title": "Implement Race Condition Fix",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement the selected race condition mitigation pattern in useFormStackURLSync hook.",
               "subtasks": [
                 {
@@ -145,7 +145,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T2.S3",
                   "title": "Write tests for race condition scenarios",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T2.S2"
