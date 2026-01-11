@@ -303,8 +303,8 @@ ROI = Negative (premature optimization)
 ### Next Steps
 
 - ✅ **P1.M4.T1.S1 (This task)**: Complete architectural analysis
-- 📋 **Manual Profiler Verification**: Use React DevTools Profiler to confirm analysis
-- ❌ **P1.M4.T1.S2**: Mark as NOT NEEDED unless profiler shows unexpected behavior
+- ✅ **P1.M4.T1.S2**: Decision documented - No code change needed (see [plan/docs/bugfix/callback_memoization_decision.md](../bugfix/callback_memoization_decision.md))
+- 📋 **Manual Profiler Verification**: Use React DevTools Profiler to confirm analysis (optional)
 - 🔧 **Consider React Compiler**: Enable for auto-memoization instead of manual useCallback
 
 ---

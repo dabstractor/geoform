@@ -38,7 +38,17 @@ export function FormStackRenderer({ stack, onClose, onCancelRequest }: FormStack
       {stack.map((entry, index) => {
         const isActive = index === stack.length - 1;
 
-        // Create callbacks that resolve the deferred promise
+        // Callback creation pattern: Inline functions per form entry
+        //
+        // Rationale: Callbacks are NOT memoized (useCallback) because:
+        // 1. Each form receives unique callbacks closing over its own entry.deferred
+        // 2. CSS display: none isolation prevents hidden form re-renders
+        // 3. User forms are not memoized by default
+        // 4. Callbacks are not used as dependencies in other hooks
+        // 5. Analysis shows break-even threshold not met (100+ prevented renders needed)
+        //
+        // See: plan/docs/architecture/callback_performance_analysis.md
+        // See: plan/docs/bugfix/callback_memoization_decision.md
         const handleSubmit = (value: unknown) => {
           entry.deferred.resolve(value);
           onClose();

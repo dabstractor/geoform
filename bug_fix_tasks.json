@@ -245,14 +245,14 @@
           "type": "Milestone",
           "id": "P1.M4",
           "title": "Performance Optimizations",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Optimize callback creation in FormStackRenderer to prevent unnecessary re-renders in deeply nested form stacks.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M4.T1",
               "title": "Memoize FormStackRenderer Callbacks",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement useCallback or useMemo for handleSubmit, handleCancel, and handleError to prevent creating new functions on every render.",
               "subtasks": [
                 {
@@ -268,7 +268,7 @@
                   "type": "Subtask",
                   "id": "P1.M4.T1.S2",
                   "title": "Implement callback memoization if beneficial",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M4.T1.S1"
