@@ -11,7 +11,7 @@
           "type": "Milestone",
           "id": "P1.M1",
           "title": "Fix Test Output Artifacts",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Eliminate unhandled error artifacts in test stderr output to improve CI/CD clarity and signal-to-noise ratio.",
           "tasks": [
             {
@@ -47,7 +47,7 @@
               "type": "Task",
               "id": "P1.M1.T2",
               "title": "Fix useFormStackURLSync Test Error Output",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Suppress 'uncaught error' artifacts in useFormStackURLSync.test.tsx using the same error suppression improvements.",
               "subtasks": [
                 {
@@ -65,7 +65,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T2.S2",
                   "title": "Verify all test suites produce clean output",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T2.S1"
