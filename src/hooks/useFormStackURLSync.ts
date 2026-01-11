@@ -1,7 +1,7 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { useFormStackState } from './useFormStackState';
-import { useFormStackActions } from './useFormStackActions';
-import { buildFormStackUrl, parseFormStackUrl } from '../utils';
+import { useEffect, useRef, useCallback, useState } from "react";
+import { useFormStackState } from "./useFormStackState";
+import { useFormStackActions } from "./useFormStackActions";
+import { buildFormStackUrl, parseFormStackUrl } from "../utils";
 
 // Module-level RAF availability cache
 // Used to detect test environments where RAF callbacks don't execute
@@ -17,7 +17,7 @@ function isRAFActuallyAvailable(): boolean {
     return rafAvailableCache;
   }
 
-  if (typeof requestAnimationFrame !== 'function') {
+  if (typeof requestAnimationFrame !== "function") {
     rafAvailableCache = false;
     return false;
   }
@@ -26,10 +26,10 @@ function isRAFActuallyAvailable(): boolean {
   // We'll assume it doesn't work if we're in a test-like environment
   // This is a pragmatic choice to ensure tests pass without modification
   const isTestEnvironment =
-    typeof process !== 'undefined' &&
-    process.env?.NODE_ENV === 'test' &&
-    (typeof (globalThis as any).vi !== 'undefined' ||
-      typeof (globalThis as any).__vitest_worker__ !== 'undefined');
+    typeof process !== "undefined" &&
+    process.env?.NODE_ENV === "test" &&
+    (typeof (globalThis as any).vi !== "undefined" ||
+      typeof (globalThis as any).__vitest_worker__ !== "undefined");
 
   if (isTestEnvironment) {
     rafAvailableCache = false;
@@ -128,10 +128,10 @@ export interface UseFormStackURLSyncReturn {
  * ```
  */
 export function useFormStackURLSync(
-  options: UseFormStackURLSyncOptions = {}
+  options: UseFormStackURLSyncOptions = {},
 ): UseFormStackURLSyncReturn {
   const {
-    paramName = 'forms',
+    paramName = "forms",
     restoreOnMount = true,
     syncToUrl = true,
     syncFromUrl = true,
@@ -155,6 +155,19 @@ export function useFormStackURLSync(
   const pendingUpdateRef = useRef(0);
   // Store latest stack value for RAF callback access
   const latestStackRef = useRef<readonly string[]>([]);
+  // Track component mount status for unmount safety
+  const isMountedRef = useRef<boolean>(true);
+
+  // Lifecycle management for isMountedRef
+  useEffect(() => {
+    // Mark component as mounted
+    isMountedRef.current = true;
+
+    // Cleanup: Mark component as unmounted
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Get form IDs from stack
   const getStackIds = useCallback(() => {
@@ -163,14 +176,14 @@ export function useFormStackURLSync(
 
   // Get form IDs from URL
   const getUrlState = useCallback(() => {
-    if (typeof window === 'undefined') return [];
+    if (typeof window === "undefined") return [];
     return parseFormStackUrl(paramName);
   }, [paramName]);
 
   // Update URL with current stack
   const syncStackToUrl = useCallback(
     (formIds: readonly string[], usePushState: boolean = true) => {
-      if (typeof window === 'undefined') return;
+      if (typeof window === "undefined") return;
       if (isRestoringRef.current) return;
 
       // Store latest stack value for RAF callback access
@@ -184,6 +197,11 @@ export function useFormStackURLSync(
 
       // URL update function (with version-based coalescing)
       const performUpdate = () => {
+        // Check if component is still mounted
+        if (!isMountedRef.current) {
+          return;
+        }
+
         // Only proceed if this is still the latest update
         if (updateId !== pendingUpdateRef.current) {
           // Flag reset will be handled by the winning update
@@ -194,11 +212,13 @@ export function useFormStackURLSync(
         const url = buildFormStackUrl(latestStackRef.current, paramName);
         const historyState = { [paramName]: [...latestStackRef.current] };
 
-        // Apply URL update
-        if (usePushState) {
-          window.history.pushState(historyState, '', url);
-        } else {
-          window.history.replaceState(historyState, '', url);
+        // Apply URL update (with mount guard)
+        if (isMountedRef.current) {
+          if (usePushState) {
+            window.history.pushState(historyState, "", url);
+          } else {
+            window.history.replaceState(historyState, "", url);
+          }
         }
 
         // Reset updating flag
@@ -206,11 +226,15 @@ export function useFormStackURLSync(
         // In tests, use synchronous reset since RAF callbacks don't execute
         if (isRAFActuallyAvailable()) {
           requestAnimationFrame(() => {
-            isUpdatingRef.current = false;
+            if (isMountedRef.current) {
+              isUpdatingRef.current = false;
+            }
           });
         } else {
           // Synchronous reset for test environments
-          isUpdatingRef.current = false;
+          if (isMountedRef.current) {
+            isUpdatingRef.current = false;
+          }
         }
       };
 
@@ -223,7 +247,7 @@ export function useFormStackURLSync(
         performUpdate();
       }
     },
-    [paramName]
+    [paramName],
   );
 
   // Force URL update (utility method)
@@ -233,35 +257,43 @@ export function useFormStackURLSync(
 
   // Restore stack from URL
   const restoreFromUrl = useCallback(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     const urlFormIds = getUrlState();
 
     if (urlFormIds.length > 0) {
-      setIsRestoring(true);
+      // Set restoring state with mount guard
+      if (isMountedRef.current) {
+        setIsRestoring(true);
+      }
       isRestoringRef.current = true;
 
       // Call onRestore callback if provided
       onRestore?.(urlFormIds);
 
-      // Set up the initial history state
-      window.history.replaceState(
-        { [paramName]: urlFormIds },
-        '',
-        window.location.href
-      );
+      // Set up the initial history state (with mount guard)
+      if (isMountedRef.current) {
+        window.history.replaceState(
+          { [paramName]: urlFormIds },
+          "",
+          window.location.href,
+        );
+      }
 
       // Reset restoration flag after a tick
       setTimeout(() => {
         isRestoringRef.current = false;
-        setIsRestoring(false);
+        // Set restoring state with mount guard
+        if (isMountedRef.current) {
+          setIsRestoring(false);
+        }
       }, 0);
     }
   }, [getUrlState, paramName, onRestore]);
 
   // Handle popstate (browser back/forward)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     if (!syncFromUrl) return;
 
     const handlePopstate = (event: PopStateEvent) => {
@@ -294,15 +326,15 @@ export function useFormStackURLSync(
       }, 0);
     };
 
-    window.addEventListener('popstate', handlePopstate);
+    window.addEventListener("popstate", handlePopstate);
     return () => {
-      window.removeEventListener('popstate', handlePopstate);
+      window.removeEventListener("popstate", handlePopstate);
     };
   }, [syncFromUrl, paramName, getStackIds, popToIndex]);
 
   // Initialize from URL on mount
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     if (isInitializedRef.current) return;
     if (!restoreOnMount) return;
 
@@ -312,7 +344,7 @@ export function useFormStackURLSync(
 
   // Sync stack changes to URL
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     if (!syncToUrl) return;
     if (!isInitializedRef.current) return;
 
