@@ -1,0 +1,285 @@
+# Geoform Project Codebase Tree Structure
+
+## Complete Project Tree (56 directories, 153 files)
+
+.
+├── bug_fix_tasks.json
+├── examples
+│   └── relational-forms
+│       ├── App.tsx
+│       ├── OrganizationForm.tsx
+│       ├── TeamForm.tsx
+│       ├── types.ts
+│       └── UserForm.tsx
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── plan
+│   ├── architecture
+│   │   ├── external_dependencies.md
+│   │   ├── summary.md
+│   │   ├── system_context.md
+│   │   └── testing_strategy.md
+│   ├── bugfix
+│   │   └── P1M1T1S2
+│   │       └── research
+│   │           └── codebase_tree.txt  ← This file
+│   ├── docs
+│   │   ├── architecture
+│   │   │   ├── system_context.md
+│   │   │   └── testing_best_practices.md
+│   │   ├── bugfix
+│   │   │   ├── architecture
+│   │   │   │   └── test_audit_notes.md
+│   │   │   └── P1M1T1S1
+│   │   │       ├── PRP.md
+│   │   │       └── research
+│   │   │           ├── react_error_testing.md
+│   │   │           ├── test_audit_notes.md
+│   │   │           ├── tothrow_patterns.md
+│   │   │           └── vitest_error_suppression.md
+│   │   ├── PLAN_SUMMARY.md
+│   │   ├── tasks.json
+│   │   └── TEST_RESULTS.md
+│   ├── [various planning months...]
+├── PRD.md
+├── README.md
+├── src
+│   ├── components
+│   │   ├── Breadcrumbs.tsx
+│   │   ├── ConfirmationDialog.tsx
+│   │   ├── FormErrorBoundary.tsx
+│   │   ├── FormStackProvider.tsx
+│   │   ├── FormStackRenderer.tsx
+│   │   ├── index.ts
+│   │   └── __tests__
+│   │       ├── Breadcrumbs.integration.test.tsx
+│   │       ├── Breadcrumbs.test.tsx
+│   │       ├── ConfirmationDialog.integration.test.tsx
+│   │       ├── ConfirmationDialog.test.tsx
+│   │       ├── FormErrorBoundary.test.tsx
+│   │       ├── FormStackProvider.integration.test.tsx
+│   │       └── FormStackRenderer.test.tsx
+│   ├── context
+│   │   ├── FormStackContext.ts
+│   │   ├── formStackReducer.ts
+│   │   ├── index.ts
+│   │   └── __tests__
+│   │       └── formStackReducer.test.ts
+│   ├── hooks
+│   │   ├── index.ts
+│   │   ├── __tests__
+│   │   │   ├── useFormStackActions.test.tsx
+│   │   │   ├── useFormStackState.test.tsx
+│   │   │   ├── useFormStack.test.tsx
+│   │   │   └── useFormStackURLSync.test.tsx
+│   │   ├── useFormStackActions.ts
+│   │   ├── useFormStackState.ts
+│   │   ├── useFormStack.ts
+│   │   └── useFormStackURLSync.ts
+│   ├── index.ts
+│   ├── __tests__
+│   │   ├── integration
+│   │   │   ├── BreadcrumbNavigation.integration.test.tsx
+│   │   │   ├── DeepNesting.integration.test.tsx
+│   │   │   ├── ErrorBoundaryIsolation.integration.test.tsx
+│   │   │   ├── FormLifecycle.integration.test.tsx
+│   │   │   ├── StatePreservation.integration.test.tsx
+│   │   │   └── test-utils.tsx
+│   │   └── setup.test.tsx
+│   ├── types
+│   │   ├── context.ts
+│   │   ├── form.ts
+│   │   ├── index.ts
+│   │   ├── stack.ts
+│   │   └── __tests__
+│   │       └── types.test.ts
+│   └── utils
+│       ├── createDeferredPromise.ts
+│       ├── index.ts
+│       ├── __tests__
+│       │   ├── createDeferredPromise.test.ts
+│       │   └── urlEncoding.test.ts
+│       └── urlEncoding.ts
+├── tsconfig.json
+├── tsup.config.ts
+├── vitest.config.ts
+└── vitest.setup.ts
+
+## Detailed Test Directory Structure
+
+### src/hooks/__tests__/ (4 files)
+├── useFormStackActions.test.tsx
+├── useFormStackState.test.tsx
+├── useFormStack.test.tsx
+└── useFormStackURLSync.test.tsx
+
+### src/components/__tests__/ (7 files)
+├── Breadcrumbs.integration.test.tsx
+├── Breadcrumbs.test.tsx
+├── ConfirmationDialog.integration.test.tsx
+├── ConfirmationDialog.test.tsx
+├── FormErrorBoundary.test.tsx
+├── FormStackProvider.integration.test.tsx
+└── FormStackRenderer.test.tsx
+
+## Configuration Files
+
+### package.json
+```json
+{
+  "name": "geoform",
+  "version": "0.1.0",
+  "description": "React Hierarchical Form Stack System - infinitely nestable forms with state preservation",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "jsdom": "^25.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist coverage",
+    "prepublishOnly": "npm run clean && npm run type-check && npm run test && npm run build"
+  }
+}
+```
+
+### vitest.config.ts
+```typescript
+/// <reference types="vitest" />
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./vitest.setup.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['node_modules', 'dist'],
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/**/*.test.{ts,tsx}',
+        'src/**/*.spec.{ts,tsx}',
+        'src/**/index.ts',
+      ],
+      reporter: ['text', 'html', 'json'],
+    },
+  },
+});
+```
+
+### tsup.config.ts
+```typescript
+import { defineConfig } from 'tsup';
+
+export default defineConfig({
+  entry: ['src/index.ts'],
+  format: ['esm', 'cjs'],
+  outExtension({ format }) {
+    return {
+      js: format === 'esm' ? '.mjs' : '.cjs',
+    };
+  },
+  dts: true,
+  sourcemap: true,
+  clean: true,
+  target: 'es2020',
+  minify: false,
+  treeshake: true,
+  splitting: false,
+  external: ['react', 'react-dom'],
+});
+```
+
+### tsconfig.json
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "skipLibCheck": true,
+    "types": ["vitest/globals"]
+  },
+  "include": ["src", "vitest.setup.ts"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+### vitest.setup.ts
+```typescript
+import { afterEach, vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
+
+// Cleanup after each test to prevent DOM pollution
+afterEach(() => {
+  cleanup();
+});
+
+// Reset mocks after each test
+afterEach(() => {
+  vi.clearAllMocks();
+});
+```

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { useFormStack } from '../useFormStack';
@@ -58,6 +58,17 @@ describe('useFormStack', () => {
   });
 
   describe('when used outside FormStackProvider', () => {
+    // Suppress console.error for expected errors in this block
+    const originalError = console.error;
+
+    beforeEach(() => {
+      console.error = vi.fn();
+    });
+
+    afterEach(() => {
+      console.error = originalError;
+    });
+
     it('should throw error from useFormStackState', () => {
       // Arrange & Act & Assert
       // Combined hook uses individual hooks, so error comes from first failing hook

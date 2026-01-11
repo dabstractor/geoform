@@ -18,7 +18,7 @@
               "type": "Task",
               "id": "P1.M1.T1",
               "title": "Fix useFormStack Test Error Output",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Suppress 'uncaught error' artifacts in useFormStack.test.tsx by improving error catching pattern.",
               "subtasks": [
                 {
@@ -34,7 +34,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T1.S2",
                   "title": "Implement improved error suppression for useFormStack tests",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T1.S1"
