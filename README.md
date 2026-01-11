@@ -536,6 +536,62 @@ URL format: `?forms=form1,form2,form3`
 
 Browser back/forward buttons navigate through form history.
 
+#### Form Restoration
+
+The `onRestore` callback receives form IDs from the URL, but you must implement the actual form opening logic. This is intentional—geoform treats forms as black-box components managed by you, not the library.
+
+```tsx
+import { useFormStack, useFormStackURLSync, type FormProps } from 'geoform';
+
+// Map form IDs to their components and optional labels
+function getFormComponent(formId: string) {
+  switch (formId) {
+    case 'user-form':
+      return { component: UserForm, label: 'User' };
+    case 'org-form':
+      return { component: OrgForm, label: 'Organization' };
+    case 'team-form':
+      return { component: TeamForm, label: 'Team' };
+    default:
+      console.warn(`Unknown form ID: ${formId}`);
+      return null;
+  }
+}
+
+function URLSyncedApp() {
+  const { openForm } = useFormStack();
+  const { isRestoring } = useFormStackURLSync({
+    paramName: 'forms',
+    onRestore: async (formIds) => {
+      for (const formId of formIds) {
+        const entry = getFormComponent(formId);
+        if (entry) {
+          await openForm({
+            id: formId,
+            component: entry.component,
+            label: entry.label,
+          });
+        }
+      }
+    },
+  });
+
+  if (isRestoring) {
+    return <div>Restoring forms...</div>;
+  }
+
+  return <YourApp />;
+}
+```
+
+> **Note**: geoform does not include a form registry. This is an intentional design decision—forms are managed by you, not the library. Full auto-restore would require a registry pattern, which would add complexity and reduce flexibility.
+
+**Best Practices**:
+
+- Handle unknown form IDs gracefully (don't crash on invalid URLs)
+- Show a loading state during restoration using `isRestoring`
+- Remember: the URL only tracks form IDs, not form data or user input
+
 ### Confirmation Dialogs
 
 Prevent accidental data loss with confirmation dialogs:

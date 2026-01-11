@@ -308,14 +308,14 @@
               "type": "Task",
               "id": "P1.M5.T2",
               "title": "Document URL Sync Limitations",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add documentation explaining that URL sync encodes form IDs but cannot auto-restore forms without consumer implementation.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M5.T2.S1",
                   "title": "Add URL sync restoration documentation to README",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - URL sync can encode IDs in ?forms= param but cannot auto-render forms without registry, onRestore callback provided for consumer implementation, aligns with 'No form registry' non-goal.\n2. INPUT: README.md, specifically the Query String Integration section.\n3. LOGIC: Add a subsection 'Form Restoration' explaining: (1) URL sync tracks which forms are open via ?forms= param, (2) Sharing URLs works for state tracking but forms don't auto-render, (3) Implement onRestore callback to handle restoration manually, (4) Provide code example using switch statement to map form IDs to components, (5) Note that full auto-restore would require a form registry (explicit non-goal).\n4. OUTPUT: Enhanced README.md with URL sync restoration explanation and code example."
