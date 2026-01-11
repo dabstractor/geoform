@@ -160,7 +160,7 @@
           "type": "Milestone",
           "id": "P1.M3",
           "title": "Improve Error Handling & API Clarity",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Address silent failures in popToIndex, clarify public API usage, and document error retry behavior.",
           "tasks": [
             {
@@ -225,14 +225,14 @@
               "type": "Task",
               "id": "P1.M3.T3",
               "title": "Document Error Retry Limitations",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add documentation to FormErrorBoundary explaining that retry is for transient errors only.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T3.S1",
                   "title": "Add JSDoc and comment documentation for retry behavior",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - FormErrorBoundary.tsx lines 110-116 implement retry using retryCount to force remount, props remain unchanged on retry.\n2. INPUT: File src/components/FormErrorBoundary.tsx, specifically handleRetry method and component JSDoc.\n3. LOGIC: Add prominent JSDoc comment to FormErrorBoundary component explaining: (1) Retry mechanism uses retryCount to force child remount, (2) Child receives same props as before error, (3) Retry is intended for transient errors (network failures, temporary rendering bugs), (4) Structural errors (bad props) will recur and require form closure. Add inline comment at handleRetry method reinforcing this.\n4. OUTPUT: Enhanced documentation in src/components/FormErrorBoundary.tsx explaining retry limitations."
