@@ -680,10 +680,63 @@ See the [examples/relational-forms](./examples/relational-forms) directory for a
 
 ## Browser Support
 
+geoform targets modern browsers with ES2020+ support. The `ConfirmationDialog` component uses the native HTML `<dialog>` element for accessible modal dialogs.
+
+### Minimum Browser Versions
+
+| Browser | Minimum Version | <dialog> Support | Notes |
+|---------|----------------|------------------|-------|
+| Chrome | 37+ | ✅ Native | Full support including showModal() |
+| Firefox | 98+ | ✅ Native | Required preference flag in earlier versions |
+| Safari | 15.4+ | ✅ Native | iOS Safari 15.4+ also supported |
+| Edge | 79+ | ✅ Native | Chromium-based Edge |
+| Opera | 24+ | ✅ Native | Based on Chromium |
+| Internet Explorer | All | ❌ No | Requires polyfill |
+
+**Global Support**: ~98.5% of users have native support ([source](https://caniuse.com/dialog))
+
+### Feature Detection
+
+The `ConfirmationDialog` component includes runtime feature detection:
+
+```typescript
+// Feature detection implemented in ConfirmationDialog
+if (typeof dialog.showModal === 'function') {
+  dialog.showModal();
+}
+```
+
+This prevents errors in browsers without native `<dialog>` support—the component simply won't render the modal in those browsers.
+
+### Polyfill for Older Browsers
+
+If you need to support older browsers (Internet Explorer, Safari < 15.4, Firefox < 98), use the [GoogleChrome/dialog-polyfill](https://github.com/GoogleChrome/dialog-polyfill):
+
+```bash
+npm install dialog-polyfill
+```
+
+Then register the polyfill before using `ConfirmationDialog`:
+
+```tsx
+import dialogPolyfill from 'dialog-polyfill';
+
+// In your app initialization or component
+useEffect(() => {
+  const dialog = dialogRef.current;
+  if (dialog && typeof HTMLDialogElement === 'undefined') {
+    dialogPolyfill.registerDialog(dialog);
+  }
+}, []);
+```
+
+### Other Requirements
+
 - **React**: 18.0.0 or 19.0.0
-- **Browsers**: Modern browsers supporting ES2020+ (Chrome, Firefox, Safari, Edge)
-- **SSR**: Safe for server-side rendering (URL sync checks for `window`)
-- **Bundle Size**: Zero runtime dependencies
+- **SSR**: Safe for server-side rendering (feature detection checks for `window`)
+- **Bundle Size**: Zero runtime dependencies beyond React
+
+For current browser support statistics, see [caniuse.com/dialog](https://caniuse.com/dialog).
 
 ## Contributing
 

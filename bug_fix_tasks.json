@@ -290,14 +290,14 @@
               "type": "Task",
               "id": "P1.M5.T1",
               "title": "Document Browser Support Requirements",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add clear documentation about browser support for the native dialog element and any workarounds.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M5.T1.S1",
                   "title": "Add browser support section to README",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/testing_best_practices.md Section 4 - Native <dialog> has 98.5% browser support (Chrome 37+, Firefox 98+, Safari 15.4+), feature detection already implemented, no polyfill needed for modern targets.\n2. INPUT: README.md in project root.\n3. LOGIC: Add a 'Browser Support' section to README documenting: (1) Minimum supported browser versions, (2) ConfirmationDialog uses native <dialog> element, (3) Feature detection prevents errors in older browsers, (4) For IE or Safari < 15.4 support, consider GoogleChrome/dialog-polyfill, (5) Link to caniuse.com/dialog for current stats.\n4. OUTPUT: Enhanced README.md with clear browser support documentation."
