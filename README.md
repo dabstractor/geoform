@@ -661,6 +661,281 @@ Style breadcrumbs with CSS using the provided class names:
 }
 ```
 
+## Common Pitfalls
+
+Avoid these common mistakes when working with geoform to ensure your forms work as intended.
+
+### Calling closeForm() Directly Instead of Using onSubmit/onCancel
+
+**Problem**: Calling `closeForm()` directly from a form component bypasses the Promise resolution pattern.
+
+**❌ BAD** - Direct closeForm call in a form component:
+```tsx
+// src/components/MyForm.tsx
+function MyForm({ onSubmit, onCancel }: FormProps<Data>) {
+  const { closeForm } = useFormStack();
+
+  const handleSave = () => {
+    onSubmit(data);
+    closeForm(); // WRONG! FormStackRenderer handles this via onSubmit
+  };
+}
+```
+
+**✅ GOOD** - Use onSubmit/onCancel props:
+```tsx
+// src/components/MyForm.tsx
+function MyForm({ onSubmit, onCancel }: FormProps<Data>) {
+  const handleSave = () => {
+    onSubmit(data); // FormStackRenderer will call closeForm() internally
+  };
+
+  const handleCancel = () => {
+    onCancel(); // FormStackRenderer will call closeForm() internally
+  };
+}
+```
+
+**Why it's problematic**: Direct `closeForm()` calls dispatch `POP_FORM` directly to the reducer, bypassing the Promise resolution pattern that `openForm()` returns. This breaks the parent's `await` and can cause unexpected behavior.
+
+**Valid use case**: Programmatic form closure from a parent component (outside the form stack) is appropriate:
+
+```tsx
+// ParentComponent.tsx
+function ParentComponent() {
+  const { closeForm, stack } = useFormStack();
+
+  const handleEmergencyClose = () => {
+    while (stack.length > 0) {
+      closeForm(); // OK: Called from outside the form stack
+    }
+  };
+}
+```
+
+@see [API Reference > useFormStack](#useformstack) for more details.
+
+### Expecting URL Sync to Auto-Restore Forms
+
+**Problem**: Forms don't automatically render when sharing URLs with form stack state.
+
+**❌ BAD** - Expecting auto-restore:
+```tsx
+// App.tsx
+function App() {
+  // ❌ This won't auto-restore forms from URL
+  useFormStackURLSync();
+  return <MyApp />;
+}
+```
+
+**✅ GOOD** - Implementing onRestore callback:
+```tsx
+// App.tsx
+function getFormComponent(formId: string) {
+  switch (formId) {
+    case 'user-form':
+      return { component: UserForm, label: 'User' };
+    case 'org-form':
+      return { component: OrgForm, label: 'Organization' };
+    default:
+      console.warn(`Unknown form ID: ${formId}`);
+      return null;
+  }
+}
+
+function URLSyncedApp() {
+  const { openForm } = useFormStack();
+  const { isRestoring } = useFormStackURLSync({
+    paramName: 'forms',
+    onRestore: async (formIds) => {
+      for (const formId of formIds) {
+        const entry = getFormComponent(formId);
+        if (entry) {
+          await openForm({
+            id: formId,
+            component: entry.component,
+            label: entry.label,
+          });
+        }
+      }
+    },
+  });
+
+  if (isRestoring) {
+    return <div>Restoring forms...</div>;
+  }
+
+  return <MyApp />;
+}
+```
+
+**Why it doesn't work**: geoform does not include a form registry. This is an intentional design decision—the library treats forms as black-box components managed by you. URL sync can encode form IDs but cannot auto-restore forms without component references.
+
+> **Note**: A form registry would add complexity and reduce flexibility. Manual restoration keeps the library simple and gives you full control over which forms can be opened via URL.
+
+@see [Advanced Usage > URL Sync > Form Restoration](#form-restoration) for complete implementation guide.
+
+### Using Retry for Structural Errors vs Transient Errors
+
+**Problem**: Clicking "Try Again" for structural errors will always fail.
+
+**❌ BAD** - Expecting retry to fix structural errors:
+```tsx
+// This form will ALWAYS throw - props are invalid
+<UserForm userId={undefined} />  // Component requires userId prop
+```
+When this form throws and the error boundary appears, clicking "Try Again" won't help—the prop is still `undefined`.
+
+**✅ GOOD** - Use Dismiss for structural errors:
+```tsx
+// Fix the underlying prop issue
+<UserForm userId={validId} />  // Valid prop
+```
+Or click "Dismiss" to close the form and fix the prop in the parent component.
+
+**Why retry sometimes doesn't work**: The retry mechanism increments `retryCount` to force a component remount, but children receive the **exact same props** as before the error.
+
+- **✅ Retry works for transient errors**:
+  - Network failures that may succeed on retry
+  - Temporary rendering bugs or race conditions
+  - Component state corruption that resets on remount
+
+- **❌ Retry won't work for structural errors**:
+  - Invalid or malformed props (like `undefined` userId)
+  - Type mismatches or missing required data
+  - Logic errors in the component's render method
+
+@see [API Reference > FormErrorBoundary](#formerrorboundary) for error handling patterns.
+
+### Forgetting to Wrap App in FormStackProvider
+
+**Problem**: All geoform hooks must be used within a `FormStackProvider`.
+
+**❌ BAD** - Missing provider:
+```tsx
+// App.tsx
+function App() {
+  return <MyApp />;  // No provider!
+}
+
+function MyApp() {
+  const { openForm } = useFormStack();  // ❌ THROWS ERROR
+  // Error: useFormStackState must be used within a FormStackProvider
+}
+```
+
+**✅ GOOD** - Proper provider setup:
+```tsx
+// App.tsx
+function App() {
+  return (
+    <FormStackProvider>
+      <MyApp />
+    </FormStackProvider>
+  );
+}
+
+function MyApp() {
+  const { openForm } = useFormStack();  // ✅ Works!
+}
+```
+
+**Error you'll see**: `useFormStackState must be used within a FormStackProvider`
+
+@see [API Reference > FormStackProvider](#formstackprovider) for provider setup.
+
+### Calling useFormStack Outside Provider
+
+**Problem**: Using geoform hooks outside the provider context causes runtime errors.
+
+**❌ BAD** - Hook outside provider:
+```tsx
+// utils.ts - file outside React component tree
+export function openUserForm() {
+  const { openForm } = useFormStack();  // ❌ THROWS ERROR
+  // Error: useFormStackState must be used within a FormStackProvider
+}
+```
+
+**✅ GOOD** - Hook inside provider (within React component):
+```tsx
+// UserButton.tsx - React component within provider tree
+function UserButton() {
+  const { openForm } = useFormStack();  // ✅ Works!
+
+  const handleClick = async () => {
+    const result = await openForm({
+      id: 'user-form',
+      component: UserForm,
+      label: 'User',
+    });
+    if (result) {
+      console.log('Created user:', result);
+    }
+  };
+
+  return <button onClick={handleClick}>Create User</button>;
+}
+```
+
+**Error you'll see**: `useFormStackState must be used within a FormStackProvider`
+
+> **Note**: React hooks (including geoform hooks) can only be called from React function components or other hooks. They cannot be called from regular functions, utility modules, or class components.
+
+### Not Handling Async Form Submission Properly
+
+**Problem**: Not understanding the Promise-based form submission pattern.
+
+**❌ BAD** - Not awaiting or checking result:
+```tsx
+// ParentComponent.tsx
+function ParentComponent() {
+  const { openForm } = useFormStack();
+
+  const handleClick = () => {
+    openForm<UserData>({
+      id: 'create-user',
+      component: UserForm,
+      label: 'Create User',
+    });
+    // ❌ Not awaiting! Can't use result.
+  };
+}
+```
+
+**✅ GOOD** - Async/await with result handling:
+```tsx
+// ParentComponent.tsx
+function ParentComponent() {
+  const { openForm } = useFormStack();
+
+  const handleClick = async () => {
+    const result = await openForm<UserData>({
+      id: 'create-user',
+      component: UserForm,
+      label: 'Create User',
+    });
+
+    if (result) {
+      // User submitted - result is UserData
+      console.log('Created user:', result.name);
+    } else {
+      // User cancelled - result is undefined
+      console.log('User cancelled');
+    }
+  };
+}
+```
+
+**How it works**: `openForm()` returns a `Promise<T | undefined>` that resolves when the form closes:
+- **Submit**: Resolves with the value passed to `onSubmit(value)`
+- **Cancel**: Resolves with `undefined`
+
+The form component itself should just call `onSubmit(data)` or `onCancel()`—the Promise pattern is handled by geoform.
+
+@see [Core Concepts > Promise-Based API](#promise-based-api) and [API Reference > useFormStack](#useformstack).
+
 ## TypeScript
 
 ### Basic Usage

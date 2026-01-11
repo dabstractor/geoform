@@ -4,7 +4,7 @@
       "type": "Phase",
       "id": "P1",
       "title": "Bug Fixes & Quality Improvements",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Address the 8 issues identified in the PRD analysis to improve code quality, test clarity, and production robustness. All issues are non-critical but should be resolved for production polish.",
       "milestones": [
         {
@@ -283,7 +283,7 @@
           "type": "Milestone",
           "id": "P1.M5",
           "title": "Documentation Improvements",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Add clarifying documentation about browser support, URL sync limitations, and common pitfalls.",
           "tasks": [
             {
@@ -326,14 +326,14 @@
               "type": "Task",
               "id": "P1.M5.T3",
               "title": "Add Common Pitfalls Documentation",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create a 'Common Pitfalls' section in README to help users avoid mistakes.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M5.T3.S1",
                   "title": "Document common mistakes and solutions",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Issue 5 (closeForm API confusion), Issue 7 (URL sync restoration expectations), Issue 8 (retry limitations), plus general React patterns from best practices research.\n2. INPUT: README.md and project JSDoc comments.\n3. LOGIC: Create a new 'Common Pitfalls' section covering: (1) Calling closeForm() directly instead of using onSubmit/onCancel, (2) Expecting URL sync to auto-restore forms without onRestore implementation, (3) Using retry for structural errors vs transient errors, (4) Forgetting to wrap app in FormStackProvider, (5) Calling useFormStack outside provider, (6) Not handling async form submission properly. For each pitfall: show the mistake, explain why it's problematic, provide correct solution.\n4. OUTPUT: New 'Common Pitfalls' section in README.md with actionable guidance."
