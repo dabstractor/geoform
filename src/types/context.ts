@@ -36,7 +36,18 @@ export interface FormStackActions {
    */
   openForm: <T>(options: OpenFormOptions<T>) => Promise<T | undefined>;
   /**
-   * Closes the current form (internal use - forms use onSubmit/onCancel instead).
+   * Closes the current form without returning data.
+   *
+   * **When NOT to use:** In form components - use the `onSubmit` and `onCancel` props
+   * passed by FormStackRenderer instead.
+   *
+   * **When to use:** Programmatic form closure from outside the form stack,
+   * advanced custom navigation, or emergency scenarios.
+   *
+   * @throws {Error} When used outside FormStackProvider context
+   *
+   * @see {@link FormProps} - Interface forms should implement instead
+   * @see {@link useFormStack} - Enhanced documentation available in UseFormStackReturn
    */
   closeForm: () => void;
   /**

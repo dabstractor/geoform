@@ -203,7 +203,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T2.S1",
                   "title": "Enhance closeForm JSDoc with usage guidelines",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - useFormStack.ts exports closeForm in UseFormStackReturn interface lines 23-28, documented as 'typically used internally'.\n2. INPUT: File src/hooks/useFormStack.ts, specifically the closeForm JSDoc comment and type definition.\n3. LOGIC: Expand JSDoc to explain: (1) Primary use: forms should use onSubmit/onCancel props passed from FormStackRenderer, (2) Direct use cases: programmatic closure from outside form stack, advanced custom navigation logic, (3) Warning: calling closeForm() without proper form cleanup may cause unexpected behavior. Add code example showing recommended vs discouraged usage.\n4. OUTPUT: Enhanced JSDoc documentation in src/hooks/useFormStack.ts for closeForm function."
