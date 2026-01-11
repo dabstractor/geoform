@@ -1,0 +1,348 @@
+{
+  "backlog": [
+    {
+      "type": "Phase",
+      "id": "P1",
+      "title": "Bug Fixes & Quality Improvements",
+      "status": "Planned",
+      "description": "Address the 8 issues identified in the PRD analysis to improve code quality, test clarity, and production robustness. All issues are non-critical but should be resolved for production polish.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P1.M1",
+          "title": "Fix Test Output Artifacts",
+          "status": "Planned",
+          "description": "Eliminate unhandled error artifacts in test stderr output to improve CI/CD clarity and signal-to-noise ratio.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M1.T1",
+              "title": "Fix useFormStack Test Error Output",
+              "status": "Planned",
+              "description": "Suppress 'uncaught error' artifacts in useFormStack.test.tsx by improving error catching pattern.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S1",
+                  "title": "Audit current error-throwing test patterns in useFormStack.test.tsx",
+                  "status": "Complete",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - Tests use Vitest with jsdom, current console.error suppression exists in beforeEach/afterEach.\n2. INPUT: File path src/hooks/__tests__/useFormStack.test.tsx containing error boundary tests.\n3. LOGIC: Review all tests that intentionally throw errors to verify they properly suppress console.error. Identify patterns where expect().toThrow() is used incorrectly vs testing error boundary results.\n4. OUTPUT: List of test descriptions and line numbers where error suppression needs improvement, documented in plan_bugfix/architecture/test_audit_notes.md."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S2",
+                  "title": "Implement improved error suppression for useFormStack tests",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/testing_best_practices.md Section 1.2 - Use vi.fn() to spy on console.error, restore in afterEach. Don't use expect().toThrow() for error boundaries.\n2. INPUT: Audit list from P1.M1.T1.S1 identifying specific test cases needing improvement.\n3. LOGIC: For each identified test, ensure console.error is properly suppressed before the error is thrown and restored after assertion. Use the pattern: beforeEach(() => { console.error = vi.fn(); }); afterEach(() => { console.error = originalError; });. Test the RESULT (fallback UI), not the throw.\n4. OUTPUT: Modified src/hooks/__tests__/useFormStack.test.tsx with no unhandled error artifacts in stderr when running npm test."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M1.T2",
+              "title": "Fix useFormStackURLSync Test Error Output",
+              "status": "Planned",
+              "description": "Suppress 'uncaught error' artifacts in useFormStackURLSync.test.tsx using the same error suppression improvements.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S1",
+                  "title": "Apply error suppression improvements to useFormStackURLSync tests",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/testing_best_practices.md Section 1.3 - Error boundary tests should verify fallback UI appears, not that errors are thrown.\n2. INPUT: Working error suppression pattern from P1.M1.T1.S2 (useFormStack.test.tsx).\n3. LOGIC: Apply the same console.error suppression pattern to src/hooks/__tests__/useFormStackURLSync.test.tsx. Ensure all tests that trigger errors properly suppress console output before error and restore after.\n4. OUTPUT: Modified src/hooks/__tests__/useFormStackURLSync.test.tsx with clean stderr output (no uncaught error artifacts)."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S2",
+                  "title": "Verify all test suites produce clean output",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - Total 220 tests across 21 test files must pass.\n2. INPUT: Modified test files from P1.M1.T1.S2 and P1.M1.T2.S1.\n3. LOGIC: Run full test suite with `npm test` and verify: (1) All 220 tests still pass, (2) stderr output contains no 'uncaught error' or 'Uncaught' messages, (3) Only expected test output appears. Use grep or visual inspection to confirm clean output.\n4. OUTPUT: Confirmation in plan_bugfix/architecture/test_validation.md that test suite runs cleanly with no error artifacts."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M2",
+          "title": "Fix URL Sync Race Condition",
+          "status": "Planned",
+          "description": "Implement race condition mitigation in useFormStackURLSync hook to prevent inconsistent state during rapid form open/close operations combined with browser back button navigation.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M2.T1",
+              "title": "Design Race Condition Mitigation Strategy",
+              "status": "Planned",
+              "description": "Research and design the best approach to prevent race conditions in URL sync using modern React patterns.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S1",
+                  "title": "Analyze current URL sync implementation and race condition scenarios",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - useFormStackURLSync.ts uses isRestoringRef flag, prevStackRef for tracking, syncStackToUrl function at lines 226-247.\n2. INPUT: File src/hooks/useFormStackURLSync.ts containing the current URL synchronization logic.\n3. LOGIC: Analyze the specific race condition described in PRD Issue 2: (1) User opens Form A → URL updates, (2) User quickly opens Form B → URL updates, (3) User hits back → popstate fires, (4) If URL sync effect hasn't run, prevStackRef might be stale. Document the exact sequence of events and the potential failure mode.\n4. OUTPUT: Detailed race condition analysis in plan_bugfix/architecture/url_race_analysis.md with sequence diagrams and current mitigation gaps."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S2",
+                  "title": "Select optimal race condition mitigation pattern",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/testing_best_practices.md Section 2 - Three patterns available: (A) useRef for tracking pending operations, (B) useDeferredValue for non-blocking updates, (C) useTransition for coordinated updates. Section 2.2 recommends useRef pattern with pending update coalescing.\n2. INPUT: Race condition analysis from P1.M2.T1.S1 identifying the exact failure scenario.\n3. LOGIC: Evaluate the three patterns against the specific use case: rapid form open/close + browser back button. Consider: (1) Does useDeferredValue introduce unacceptable URL lag? (2) Does useTransition work with history API? (3) Can useRef pending update pattern prevent all race scenarios? Select the pattern that maintains URL sync accuracy while preventing race conditions.\n4. OUTPUT: Decision document in plan_bugfix/architecture/url_mitigation_decision.md with selected pattern, justification, and implementation sketch."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M2.T2",
+              "title": "Implement Race Condition Fix",
+              "status": "Planned",
+              "description": "Implement the selected race condition mitigation pattern in useFormStackURLSync hook.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S1",
+                  "title": "Implement useRef-based pending update tracking",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M2.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/testing_best_practices.md Section 2.2 - useRef pattern: isUpdatingRef flag tracks when URL updates are in progress, pendingUpdateRef stores latest state, updateURL function coalesces rapid updates.\n2. INPUT: Decision from P1.M2.T1.S2 specifying useRef pattern (assume selected), file src/hooks/useFormStackURLSync.ts.\n3. LOGIC: Add isUpdatingRef and pendingUpdateRef to track async URL operations. Modify syncStackToUrl function to check isUpdatingRef.current and store pending updates instead of immediately calling history API. Add cleanup in useEffect to process pending updates after completion. Ensure popstate handler respects isUpdatingRef flag.\n4. OUTPUT: Modified src/hooks/useFormStackURLSync.ts with race condition protection, preserving all existing functionality."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S2",
+                  "title": "Add isMountedRef pattern for unmount safety",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/testing_best_practices.md Section 2.4 - isMountedRef pattern prevents updates after unmount, critical for rapidly closing forms.\n2. INPUT: Modified src/hooks/useFormStackURLSync.ts from P1.M2.T2.S1.\n3. LOGIC: Add isMountedRef initialized to true, set to false in useEffect cleanup. Wrap all history API calls and state updates in `if (!isMountedRef.current) return;` guards. Prevents memory leaks and 'update after unmount' React warnings.\n4. OUTPUT: Enhanced src/hooks/useFormStackURLSync.ts with unmount protection."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S3",
+                  "title": "Write tests for race condition scenarios",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M2.T2.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - Test pattern: renderHook for hooks, act() for state changes, mock window.history API.\n2. INPUT: Modified src/hooks/useFormStackURLSync.ts from P1.M2.T2.S2.\n3. LOGIC: Write integration tests in src/hooks/__tests__/useFormStackURLSync.test.tsx covering: (1) Rapid openForm calls (3+ in quick succession), (2) Open form → immediate browser back, (3) Open → open → back → forward sequence, (4) Verify URL state remains consistent throughout, (5) Verify no history entries are duplicated. Use fake timers and mock history.pushState/replaceState.\n4. OUTPUT: New test cases in useFormStackURLSync.test.tsx that verify race condition protection works correctly."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M3",
+          "title": "Improve Error Handling & API Clarity",
+          "status": "Planned",
+          "description": "Address silent failures in popToIndex, clarify public API usage, and document error retry behavior.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M3.T1",
+              "title": "Fix popToIndex Silent Failure",
+              "status": "Planned",
+              "description": "Add development-mode error throwing for invalid popToIndex indices to aid debugging.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S1",
+                  "title": "Implement development-only error for invalid popToIndex",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - FormStackProvider.tsx lines 106-108 contain current silent return, code uses TypeScript strict mode, consumer Breadcrumbs component validates indices before calling.\n2. INPUT: File src/components/FormStackProvider.tsx, specifically the popToIndex function around lines 106-108.\n3. LOGIC: Add a conditional check: if (process.env.NODE_ENV === 'development' && (index < 0 || index >= state.stack.length)) { throw new RangeError(`popToIndex: Invalid index ${index}. Stack length is ${state.stack.length}.`); }. This throws in dev but silently fails in production (graceful degradation). Add JSDoc comment explaining this behavior.\n4. OUTPUT: Modified src/components/FormStackProvider.tsx with dev-only error throwing for invalid indices."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S2",
+                  "title": "Add test for popToIndex error handling",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M3.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/testing_best_practices.md Section 1.4 - Test results, not throws. Use expect().toThrow() for synchronous function calls that should throw.\n2. INPUT: Modified popToIndex function from P1.M3.T1.S1.\n3. LOGIC: In src/components/__tests__/FormStackProvider.test.tsx, add test cases: (1) 'should throw error in development for negative index', (2) 'should throw error in development for out-of-bounds index', (3) 'should return undefined silently in production for invalid index'. Mock NODE_ENV to 'development' and 'production'. Use expect(popToIndex(-1)).toThrow() pattern since this is a direct function call, not an error boundary.\n4. OUTPUT: New tests in FormStackProvider.test.tsx verifying error throwing behavior."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M3.T2",
+              "title": "Clarify closeForm API Documentation",
+              "status": "Planned",
+              "description": "Improve documentation for closeForm to explain when it should be used versus onSubmit/onCancel.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T2.S1",
+                  "title": "Enhance closeForm JSDoc with usage guidelines",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - useFormStack.ts exports closeForm in UseFormStackReturn interface lines 23-28, documented as 'typically used internally'.\n2. INPUT: File src/hooks/useFormStack.ts, specifically the closeForm JSDoc comment and type definition.\n3. LOGIC: Expand JSDoc to explain: (1) Primary use: forms should use onSubmit/onCancel props passed from FormStackRenderer, (2) Direct use cases: programmatic closure from outside form stack, advanced custom navigation logic, (3) Warning: calling closeForm() without proper form cleanup may cause unexpected behavior. Add code example showing recommended vs discouraged usage.\n4. OUTPUT: Enhanced JSDoc documentation in src/hooks/useFormStack.ts for closeForm function."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T2.S2",
+                  "title": "Add development-mode warning for direct closeForm calls",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M3.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - React 19 supports console.warn for development feedback, patterns exist for detecting 'external' calls vs internal.\n2. INPUT: Modified src/hooks/useFormStack.ts from P1.M3.T2.S1.\n3. LOGIC: Add a development-mode warning in closeForm implementation: if (process.env.NODE_ENV === 'development') { console.warn('closeForm() was called directly. Most forms should use onSubmit/onCancel props instead. Use closeForm() only for programmatic closure from outside the form stack.'); }. Wrap in check to avoid warning on first call (let consumer decide).\n4. OUTPUT: Enhanced closeForm function with development-mode usage warning."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M3.T3",
+              "title": "Document Error Retry Limitations",
+              "status": "Planned",
+              "description": "Add documentation to FormErrorBoundary explaining that retry is for transient errors only.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T3.S1",
+                  "title": "Add JSDoc and comment documentation for retry behavior",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - FormErrorBoundary.tsx lines 110-116 implement retry using retryCount to force remount, props remain unchanged on retry.\n2. INPUT: File src/components/FormErrorBoundary.tsx, specifically handleRetry method and component JSDoc.\n3. LOGIC: Add prominent JSDoc comment to FormErrorBoundary component explaining: (1) Retry mechanism uses retryCount to force child remount, (2) Child receives same props as before error, (3) Retry is intended for transient errors (network failures, temporary rendering bugs), (4) Structural errors (bad props) will recur and require form closure. Add inline comment at handleRetry method reinforcing this.\n4. OUTPUT: Enhanced documentation in src/components/FormErrorBoundary.tsx explaining retry limitations."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M4",
+          "title": "Performance Optimizations",
+          "status": "Planned",
+          "description": "Optimize callback creation in FormStackRenderer to prevent unnecessary re-renders in deeply nested form stacks.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M4.T1",
+              "title": "Memoize FormStackRenderer Callbacks",
+              "status": "Planned",
+              "description": "Implement useCallback or useMemo for handleSubmit, handleCancel, and handleError to prevent creating new functions on every render.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T1.S1",
+                  "title": "Analyze performance impact of current callback creation",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/testing_best_practices.md Section 3 - React 19 Compiler auto-memoizes, useCallback overhead is ~0.01ms, break-even is 100+ prevented re-renders. Forms are already isolated by CSS visibility.\n2. INPUT: File src/components/FormStackRenderer.tsx lines 42-60 where callbacks are created in render loop.\n3. LOGIC: Measure current performance: Create a test with 10 nested forms, modify top form state, count re-renders using React DevTools Profiler or console.log in components. Determine if hidden forms re-render when visible form changes. Assess if memoization would provide measurable benefit or premature optimization.\n4. OUTPUT: Performance analysis in plan_bugfix/architecture/callback_performance_analysis.md with profiler data and recommendation."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T1.S2",
+                  "title": "Implement callback memoization if beneficial",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M4.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/testing_best_practices.md Section 3.2 - useCallback is worthwhile when function is passed to memoized child or used as dependency. Section 3.6 decision tree.\n2. INPUT: Performance analysis from P1.M4.T1.S1 (may recommend no action if benefit is negligible).\n3. LOGIC: If analysis shows benefit: Wrap handleSubmit, handleCancel, handleError in useCallback with dependencies [entry.deferred, onClose, onCancelRequest]. Use entry.id as key to maintain stable references. If analysis shows no benefit: Document why memoization is unnecessary (CSS isolation already prevents visual updates, React 19 Compiler may optimize).\n4. OUTPUT: Either (A) Modified src/components/FormStackRenderer.tsx with memoized callbacks OR (B) Documentation in plan_bugfix/architecture/callback_memoization_decision.md explaining why no change is needed."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M5",
+          "title": "Documentation Improvements",
+          "status": "Planned",
+          "description": "Add clarifying documentation about browser support, URL sync limitations, and common pitfalls.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M5.T1",
+              "title": "Document Browser Support Requirements",
+              "status": "Planned",
+              "description": "Add clear documentation about browser support for the native dialog element and any workarounds.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M5.T1.S1",
+                  "title": "Add browser support section to README",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/testing_best_practices.md Section 4 - Native <dialog> has 98.5% browser support (Chrome 37+, Firefox 98+, Safari 15.4+), feature detection already implemented, no polyfill needed for modern targets.\n2. INPUT: README.md in project root.\n3. LOGIC: Add a 'Browser Support' section to README documenting: (1) Minimum supported browser versions, (2) ConfirmationDialog uses native <dialog> element, (3) Feature detection prevents errors in older browsers, (4) For IE or Safari < 15.4 support, consider GoogleChrome/dialog-polyfill, (5) Link to caniuse.com/dialog for current stats.\n4. OUTPUT: Enhanced README.md with clear browser support documentation."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M5.T2",
+              "title": "Document URL Sync Limitations",
+              "status": "Planned",
+              "description": "Add documentation explaining that URL sync encodes form IDs but cannot auto-restore forms without consumer implementation.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M5.T2.S1",
+                  "title": "Add URL sync restoration documentation to README",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - URL sync can encode IDs in ?forms= param but cannot auto-render forms without registry, onRestore callback provided for consumer implementation, aligns with 'No form registry' non-goal.\n2. INPUT: README.md, specifically the Query String Integration section.\n3. LOGIC: Add a subsection 'Form Restoration' explaining: (1) URL sync tracks which forms are open via ?forms= param, (2) Sharing URLs works for state tracking but forms don't auto-render, (3) Implement onRestore callback to handle restoration manually, (4) Provide code example using switch statement to map form IDs to components, (5) Note that full auto-restore would require a form registry (explicit non-goal).\n4. OUTPUT: Enhanced README.md with URL sync restoration explanation and code example."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M5.T3",
+              "title": "Add Common Pitfalls Documentation",
+              "status": "Planned",
+              "description": "Create a 'Common Pitfalls' section in README to help users avoid mistakes.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M5.T3.S1",
+                  "title": "Document common mistakes and solutions",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD Issue 5 (closeForm API confusion), Issue 7 (URL sync restoration expectations), Issue 8 (retry limitations), plus general React patterns from best practices research.\n2. INPUT: README.md and project JSDoc comments.\n3. LOGIC: Create a new 'Common Pitfalls' section covering: (1) Calling closeForm() directly instead of using onSubmit/onCancel, (2) Expecting URL sync to auto-restore forms without onRestore implementation, (3) Using retry for structural errors vs transient errors, (4) Forgetting to wrap app in FormStackProvider, (5) Calling useFormStack outside provider, (6) Not handling async form submission properly. For each pitfall: show the mistake, explain why it's problematic, provide correct solution.\n4. OUTPUT: New 'Common Pitfalls' section in README.md with actionable guidance."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
