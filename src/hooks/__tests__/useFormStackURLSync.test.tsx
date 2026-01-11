@@ -307,6 +307,17 @@ describe('useFormStackURLSync', () => {
   });
 
   describe('error handling', () => {
+    // Suppress console.error for expected errors in this block
+    const originalError = console.error;
+
+    beforeEach(() => {
+      console.error = vi.fn();
+    });
+
+    afterEach(() => {
+      console.error = originalError;
+    });
+
     it('should throw error when used outside FormStackProvider', () => {
       expect(() => {
         renderHook(() => useFormStackURLSync());
