@@ -123,7 +123,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T2.S1",
                   "title": "Implement useRef-based pending update tracking",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T1.S2"
