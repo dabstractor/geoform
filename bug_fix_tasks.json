@@ -167,7 +167,7 @@
               "type": "Task",
               "id": "P1.M3.T1",
               "title": "Fix popToIndex Silent Failure",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add development-mode error throwing for invalid popToIndex indices to aid debugging.",
               "subtasks": [
                 {
@@ -183,7 +183,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S2",
                   "title": "Add test for popToIndex error handling",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T1.S1"
