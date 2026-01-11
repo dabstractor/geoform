@@ -97,6 +97,26 @@ export function FormStackProvider({ children }: FormStackProviderProps) {
   }, []);
 
   const closeForm = useCallback(() => {
+    // Development-mode usage warning
+    if (typeof process !== "undefined" && process.env?.NODE_ENV === 'development') {
+      console.warn(
+        'closeForm() was called directly. Most forms should use onSubmit/onCancel props instead. ' +
+        'Use closeForm() only for programmatic closure from outside the form stack.\n\n' +
+        'Example (DISCOURAGED - direct call in form):\n' +
+        '  function MyForm({ closeForm }) {\n' +
+        '    const handleSave = () => {\n' +
+        '      onSubmit(data);\n' +
+        '      closeForm(); // DON\'T DO THIS\n' +
+        '    };\n' +
+        '  }\n\n' +
+        'Example (RECOMMENDED - use onSubmit):\n' +
+        '  function MyForm({ onSubmit }) {\n' +
+        '    const handleSave = () => {\n' +
+        '      onSubmit(data); // FormStackRenderer handles closure\n' +
+        '    };\n' +
+        '  }'
+      );
+    }
     dispatch({ type: 'POP_FORM' });
   }, []);
 

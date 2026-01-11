@@ -196,7 +196,7 @@
               "type": "Task",
               "id": "P1.M3.T2",
               "title": "Clarify closeForm API Documentation",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Improve documentation for closeForm to explain when it should be used versus onSubmit/onCancel.",
               "subtasks": [
                 {
@@ -212,7 +212,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T2.S2",
                   "title": "Add development-mode warning for direct closeForm calls",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T2.S1"

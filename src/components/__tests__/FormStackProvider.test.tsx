@@ -117,3 +117,70 @@ describe('FormStackProvider - popToIndex error handling', () => {
     });
   });
 });
+
+describe('FormStackProvider - closeForm development warning', () => {
+  describe('development mode', () => {
+    let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      vi.stubEnv('NODE_ENV', 'development');
+      if (process?.env) {
+        process.env.NODE_ENV = 'development';
+      }
+      consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('should warn when closeForm is called directly', () => {
+      const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+      result.current.closeForm();
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('closeForm() was called directly')
+      );
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('use onSubmit/onCancel props instead')
+      );
+    });
+
+    it('should include code examples in warning message', () => {
+      const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+      result.current.closeForm();
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('DISCOURAGED')
+      );
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('RECOMMENDED')
+      );
+    });
+
+    it('should warn on each call (no deduplication)', () => {
+      const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+      result.current.closeForm();
+      result.current.closeForm();
+      result.current.closeForm();
+      // Should warn on every call (let consumer decide about frequency)
+      expect(consoleWarnSpy).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('production mode', () => {
+    beforeEach(() => {
+      vi.stubEnv('NODE_ENV', 'production');
+      if (process?.env) {
+        process.env.NODE_ENV = 'production';
+      }
+    });
+
+    it('should not warn when closeForm is called', () => {
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+      result.current.closeForm();
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+      consoleWarnSpy.mockRestore();
+    });
+  });
+});
