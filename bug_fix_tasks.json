@@ -174,7 +174,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S1",
                   "title": "Implement development-only error for invalid popToIndex",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/system_context.md - FormStackProvider.tsx lines 106-108 contain current silent return, code uses TypeScript strict mode, consumer Breadcrumbs component validates indices before calling.\n2. INPUT: File src/components/FormStackProvider.tsx, specifically the popToIndex function around lines 106-108.\n3. LOGIC: Add a conditional check: if (process.env.NODE_ENV === 'development' && (index < 0 || index >= state.stack.length)) { throw new RangeError(`popToIndex: Invalid index ${index}. Stack length is ${state.stack.length}.`); }. This throws in dev but silently fails in production (graceful degradation). Add JSDoc comment explaining this behavior.\n4. OUTPUT: Modified src/components/FormStackProvider.tsx with dev-only error throwing for invalid indices."

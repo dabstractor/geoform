@@ -100,8 +100,25 @@ export function FormStackProvider({ children }: FormStackProviderProps) {
     dispatch({ type: 'POP_FORM' });
   }, []);
 
-  // Navigate to specific form, cancelling all deeper forms
+  /**
+   * Navigates to a specific form in the stack by index.
+   * All forms after the target index are cancelled (resolved with undefined).
+   * Used by Breadcrumbs component for direct navigation.
+   *
+   * @param index - Zero-based index of the target form. Must be >= 0 and < stack.length.
+   * @throws {RangeError} In development mode, when index is negative or >= stack.length.
+   *                      Production silently ignores invalid indices (graceful degradation).
+   */
   const popToIndex = useCallback(async (index: number) => {
+    // Development-mode error throwing for debugging
+    if (typeof process !== "undefined" && process.env?.NODE_ENV === "development") {
+      if (index < 0 || index >= state.stack.length) {
+        throw new RangeError(
+          `popToIndex: Invalid index ${index}. Stack length is ${state.stack.length}.`
+        );
+      }
+    }
+
     // Validate index bounds
     if (index < 0 || index >= state.stack.length) {
       return;
