@@ -462,6 +462,17 @@ describe("useFormStackURLSync", () => {
 
   describe("race condition protection", () => {
     describe("RAF-based coalescing", () => {
+      // Suppress console.error for expected errors in this block
+      const originalError = console.error;
+
+      beforeEach(() => {
+        console.error = vi.fn();
+      });
+
+      afterEach(() => {
+        console.error = originalError;
+      });
+
       it("should coalesce multiple rapid URL updates into one", async () => {
         const { result } = renderHook(() => useFormStackWithURLSync(), {
           wrapper,
@@ -596,6 +607,17 @@ describe("useFormStackURLSync", () => {
   });
 
   describe("rapid form operations", () => {
+    // Suppress console.error for expected errors in this block
+    const originalError = console.error;
+
+    beforeEach(() => {
+      console.error = vi.fn();
+    });
+
+    afterEach(() => {
+      console.error = originalError;
+    });
+
     it("should handle rapid openForm calls correctly", async () => {
       const { result } = renderHook(() => useFormStackWithURLSync(), {
         wrapper,
@@ -713,6 +735,17 @@ describe("useFormStackURLSync", () => {
   });
 
   describe("browser navigation race conditions", () => {
+    // Suppress console.error for expected errors in this block
+    const originalError = console.error;
+
+    beforeEach(() => {
+      console.error = vi.fn();
+    });
+
+    afterEach(() => {
+      console.error = originalError;
+    });
+
     it("should handle open form → immediate browser back", async () => {
       const { result } = renderHook(() => useFormStackWithURLSync(), {
         wrapper,
@@ -875,6 +908,17 @@ describe("useFormStackURLSync", () => {
   });
 
   describe("URL state consistency", () => {
+    // Suppress console.error for expected errors in this block
+    const originalError = console.error;
+
+    beforeEach(() => {
+      console.error = vi.fn();
+    });
+
+    afterEach(() => {
+      console.error = originalError;
+    });
+
     it("should maintain consistency throughout rapid operations", async () => {
       const { result } = renderHook(() => useFormStackWithURLSync(), {
         wrapper,
@@ -1021,6 +1065,17 @@ describe("useFormStackURLSync", () => {
   });
 
   describe("stress tests", () => {
+    // Suppress console.error for expected errors in this block
+    const originalError = console.error;
+
+    beforeEach(() => {
+      console.error = vi.fn();
+    });
+
+    afterEach(() => {
+      console.error = originalError;
+    });
+
     it("should handle 10 rapid form opens", async () => {
       const { result } = renderHook(() => useFormStackWithURLSync(), {
         wrapper,
