@@ -1,80 +1,76 @@
-# PRP: Select Optimal Race Condition Mitigation Pattern (P1.M2.T1.S2)
-
-**Subtask**: P1.M2.T1.S2
-**Title**: Select optimal race condition mitigation pattern
-**Status**: Ready for Implementation
-**Story Points**: 1
-**Confidence Score**: 10/10 for one-pass implementation success
+# PRP: P1.M2.T1.S2 - Select Optimal Race Condition Mitigation Pattern
 
 ---
 
 ## Goal
 
-**Feature Goal**: Research and select the optimal React race condition mitigation pattern for URL synchronization in the `useFormStackURLSync` hook, enabling one-pass implementation success for the race condition fix.
+**Feature Goal**: Select the optimal React pattern for mitigating URL synchronization race conditions in the `useFormStackURLSync` hook, specifically addressing rapid form open/close operations combined with browser back button navigation.
 
-**Deliverable**: Decision document stored at `plan/bugfix/P1M2T1S2/MITIGATION_DECISION.md` including:
-1. Evaluation of three React patterns (useRef, useDeferredValue, useTransition)
-2. Pattern comparison matrix against URL sync requirements
-3. Selected pattern with detailed justification
-4. Implementation sketch with code examples
-5. References to all research sources
+**Deliverable**: A decision document stored at `plan/bugfix/architecture/url_mitigation_decision.md` containing:
+1. Selected pattern recommendation with detailed justification
+2. Pattern comparison matrix against specific use case requirements
+3. Implementation sketch with exact code placement guidance
+4. Validation test cases to verify the fix
 
 **Success Definition**:
-- Decision document exists with clear pattern selection
-- Pattern selection is justified against URL sync requirements
-- Implementation sketch is copy-paste ready
-- All research sources are documented with URLs
-- Decision enables P1.M2.T2 (implementation) to proceed without additional research
-
----
-
-## User Persona
-
-**Target User**: Engineering lead or senior developer responsible for implementing the race condition fix in P1.M2.T2.
-
-**Use Case**: When implementing the race condition fix, the developer needs:
-- Clear direction on which pattern to use
-- Understanding of why other patterns were rejected
-- Concrete code examples to follow
-- Awareness of pitfalls and gotchas
-- Reference documentation for deeper understanding
-
-**User Journey**:
-1. Developer opens P1.M2.T1.S2 PRP to understand the decision
-2. Developer reads the evaluation criteria and comparison matrix
-3. Developer reviews the selected pattern with implementation sketch
-4. Developer uses the implementation sketch to implement the fix in P1.M2.T2.S1
-5. Developer validates against test cases specified in the decision
-
-**Pain Points Addressed**:
-- Without clear decision: Developer must research patterns themselves (time-consuming)
-- Without justification: Developer may question the choice or advocate for wrong pattern
-- Without code examples: Developer must figure out implementation details
-- Without references: Developer cannot verify or deepen understanding
+- Decision document clearly identifies the optimal pattern
+- Justification directly addresses all three race condition scenarios from P1.M2.T1.S1
+- Implementation sketch provides exact file locations and line numbers
+- Pattern selection maintains URL sync accuracy (0ms lag) while preventing race conditions
 
 ---
 
 ## Why
 
-- **Enables Fix Implementation**: P1.M2.T2 (implementation) depends on this decision
-- **Prevents Wrong Pattern Choice**: useDeferredValue/useTransition break URL sync requirements
-- **Knowledge Transfer**: Documents why certain patterns were rejected for future reference
-- **Quality Assurance**: Research-backed decision ensures the fix actually works
-- **Risk Mitigation**: Understanding the trade-offs prevents introducing new bugs
+### Business Value
+- **User Experience**: Prevents duplicate history entries that cause "back button hell" where users must press back multiple times to close a single form
+- **Data Integrity**: Ensures URL state always matches component state, preventing navigation confusion
+- **Reliability**: Eliminates race conditions in a critical path (navigation) that affects 100% of users
+
+### Integration with Existing Features
+- Builds upon P1.M2.T1.S1 race condition analysis that identified three specific failure scenarios
+- Provides the design foundation for P1.M2.T2 implementation tasks
+- Maintains compatibility with existing `isRestoringRef`, `isUpdatingRef`, `pendingUpdateRef` infrastructure
+
+### Problems Solved
+- **Scenario 1**: Rapid form open/close followed by immediate back button press creates duplicate history entries
+- **Scenario 2**: Multiple state updates queue before browser processes history, causing URL-state desync
+- **Scenario 3**: Component unmounts during async URL update, causing memory leaks and React warnings
 
 ---
 
 ## What
 
+### User-Visible Behavior
+No user-visible changes in this subtask. This is a research/design task that produces a decision document.
+
+### Technical Requirements
+
+**Input Requirements:**
+1. Race condition analysis from P1.M2.T1.S1 (documented in `plan/docs/bugfix/P1M2T1S1/research/url_sync_race_conditions.md`)
+2. Three candidate patterns from `plan/bugfix/architecture/testing_best_practices.md` Section 2
+3. Current `useFormStackURLSync` implementation in `src/hooks/useFormStackURLSync.ts`
+
+**Evaluation Criteria:**
+1. **URL Sync Accuracy**: Must have 0ms lag - URL must immediately reflect state changes
+2. **Browser Back/Forward Support**: Must work correctly with `popstate` events
+3. **Rapid Operation Handling**: Must coalesce multiple rapid updates
+4. **Mount Safety**: Must prevent updates after component unmount
+5. **Test Compatibility**: Must work in jsdom/test environments
+
+**Output Requirements:**
+1. Decision document at `plan/bugfix/architecture/url_mitigation_decision.md`
+2. Selected pattern with justification against all evaluation criteria
+3. Implementation sketch with exact file paths and line numbers
+4. Test validation approach
+
 ### Success Criteria
 
-- [ ] Decision document exists at `plan/bugfix/P1M2T1S2/MITIGATION_DECISION.md`
-- [ ] Three patterns are evaluated (useRef, useDeferredValue, useTransition)
-- [ ] Pattern comparison matrix shows URL sync requirements
-- [ ] Selected pattern is clearly identified with justification
-- [ ] Implementation sketch includes code examples
-- [ ] All research sources are documented with URLs
-- [ ] Decision is ready for P1.M2.T2 implementation
+- [ ] Decision document exists at specified path
+- [ ] Pattern selection clearly justified against all 5 evaluation criteria
+- [ ] Implementation sketch references exact file locations (e.g., `src/hooks/useFormStackURLSync.ts:351`)
+- [ ] Decision accounts for existing codebase patterns and infrastructure
+- [ ] Validation test cases defined for all three race scenarios from P1.M2.T1.S1
 
 ---
 
@@ -82,465 +78,460 @@
 
 ### Context Completeness Check
 
-_This PRP provides: complete pattern evaluation, decision matrix with URL sync requirements, implementation sketch with code examples, and all research source URLs. An implementer can understand and validate the decision using only this document._
+**Question:** "If someone knew nothing about this codebase, would they have everything needed to implement this successfully?"
+
+**Answer:** Yes - this PRP provides:
+1. Exact file locations and line numbers for all relevant code
+2. Complete pattern documentation from architecture best practices
+3. Specific race condition scenarios from prior analysis
+4. Decision criteria with scoring matrix
+5. Implementation sketches with code examples
+6. Validation commands that work in this project
 
 ### Documentation & References
 
 ```yaml
-# MUST READ - Pattern Evaluation Criteria
-- docfile: plan/docs/architecture/testing_best_practices.md
-  why: Section 2 contains the three patterns and their use cases
-  section: "2. URL Sync Race Condition Patterns" (lines 212-898)
-  critical: |
-    Pattern 1: useRef for tracking pending operations (Section 2.2)
-    Pattern 2: useDeferredValue for non-blocking updates (Section 2.3)
-    Pattern 3: useTransition for coordinated updates (Section 2.4)
-    Section 2.2 recommends useRef pattern with pending update coalescing
+# MUST READ - Architecture Documentation
+- file: plan/bugfix/architecture/testing_best_practices.md
+  why: Contains the three race condition mitigation patterns to evaluate
+  section: Section 2 (lines 214-405)
+  pattern: Pattern definitions with code examples for useRef, useDeferredValue, useTransition
+  critical: Section 2.2 recommends useRef pattern with pending update coalescing
 
-# MUST READ - Race Condition Analysis from P1.M2.T1.S1
-- docfile: plan/docs/bugfix/P1M2T1S1/research/url_sync_race_conditions.md
-  why: Detailed analysis of the race condition and failure scenarios
-  section: "Race Condition Scenarios" and "Common Failure Modes"
-  critical: |
-    Scenario 1: Rapid State Updates + Browser Navigation (lines 35-73)
-    Failure Mode 1: Popstate Fires Before URL Sync Effect (lines 157-184)
-    Current mitigation gaps with severity ratings
+# MUST READ - Prior Analysis
+- file: plan/docs/bugfix/P1M2T1S1/research/url_sync_race_conditions.md
+  why: Complete race condition analysis identifying three failure scenarios
+  section: All sections (comprehensive research)
+  pattern: Race condition timeline diagrams and mitigation strategies
+  gotcha: Primary bug at syncToUrl effect lines 345-369 missing isRestoringRef guard
 
-# MUST READ - React Race Condition Patterns Research
-- docfile: plan/docs/bugfix/P1M2T1S2/research/react_race_condition_patterns_comprehensive.md
-  why: Comprehensive research on all three patterns with code examples
-  section: Complete document - especially "URL Synchronization Specific Analysis"
-  critical: |
-    Pattern 1: useRef + RAF (Section 1) - Works for URL sync
-    Pattern 2: useDeferredValue (Section 2) - Does NOT work for URL sync
-    Pattern 3: useTransition (Section 3) - Does NOT work for URL sync
-    Decision Matrix (lines 1191-1264) - Clear comparison
-    Recommended Implementation (lines 1266-1511)
+# MUST READ - Prior Analysis (Concise)
+- file: plan/docs/bugfix/P1M2T1S1/research/url_race_analysis.md
+  why: Focused analysis with sequence diagrams
+  section: Timeline T0-T5 showing exact race sequence
+  pattern: Visual representation of state vs URL vs flag timing
+  gotcha: setTimeout resets isRestoringRef before state update completes
 
 # MUST READ - Current Implementation
 - file: src/hooks/useFormStackURLSync.ts
-  why: The file that needs the race condition fix
-  pattern: |
-    Lines 109-114: Ref declarations (isRestoringRef, prevStackRef, isInitializedRef)
-    Lines 128-143: syncStackToUrl callback (HAS isRestoringRef guard)
-    Lines 179-214: popstate handler (sets isRestoringRef, uses setTimeout)
-    Lines 227-247: syncToUrl effect (MISSING isRestoringRef guard) - THE BUG
-  gotcha: The syncToUrl effect is missing the guard that syncStackToUrl has
+  why: The hook containing the race condition and existing mitigation patterns
+  section: Complete file (all sections relevant)
+  pattern: Multiple refs for state tracking (isRestoringRef, isUpdatingRef, pendingUpdateRef, etc.)
+  gotcha: Lines 345-369 syncToUrl effect missing guard that exists at line 187 in callback
 
-# EXTERNAL - React Official Documentation
-- url: https://react.dev/learn/referencing-values-with-refs
-  why: Official useRef documentation for tracking operation state
-  critical: |
-    Refs provide a mutable reference that persists across renders
-    Use refs to track if an effect should skip work
-    Refs don't trigger re-renders
+# MUST READ - Pattern Research
+- file: plan/bugfix/P1M2T1S2/research/react_patterns_research.md
+  why: Deep research on all three React patterns with performance analysis
+  section: Complete document (1353 lines)
+  pattern: Code examples, best practices, anti-patterns for each pattern
+  critical: Performance comparison table showing useRef: ~10ms, useDeferredValue: ~50ms
 
-- url: https://react.dev/reference/react/useDeferredValue
-  why: Official useDeferredValue documentation to understand why it's NOT suitable
-  critical: |
-    Defers updating a part of the UI
-    Keeps a previous value and schedules a re-render with new value
-    NOT for synchronization with external systems
+# MUST READ - Pattern Evaluation
+- file: plan/bugfix/P1M2T1S2/research/pattern_evaluation.md
+  why: This task's evaluation of patterns against specific use case requirements
+  section: Complete document (decision matrix and recommendation)
+  pattern: Scoring against 5 requirements with 50-point maximum
+  critical: Pattern A (useRef) scores 50/50, Pattern C (useTransition) scores 43/50
 
-- url: https://react.dev/reference/react/useTransition
-  why: Official useTransition documentation to understand why it's NOT suitable
-  critical: |
-    Marks state updates as "transitions" (non-urgent)
-    Transitions can be interrupted by more urgent updates
-    NOT for writes to external systems (like browser history)
+# REFERENCE - Test Patterns
+- file: src/hooks/__tests__/useFormStackURLSync.test.tsx
+  why: Existing test patterns for URL sync validation
+  section: All test blocks
+  pattern: Vitest + @testing-library/react-hooks patterns
+  gotcha: Tests mock window.history API
 
-- url: https://react.dev/learn/synchronizing-with-effects
-  why: Effect timing and cleanup patterns for race condition prevention
-  critical: |
-    Effects run after the browser paint
-    Each effect represents a separate synchronization process
-    Cleanup functions run before next effect
-
-# EXTERNAL - Browser History API
-- url: https://developer.mozilla.org/en-US/docs/Web/API/History_API
-  why: Understanding pushState/replaceState behavior and requirements
-  critical: |
-    pushState creates new history entry
-    replaceState updates current entry
-    popstate fires on back/forward, NOT on pushState/replaceState calls
+# REFERENCE - URL Utilities
+- file: src/utils/urlEncoding.ts
+  why: URL encoding/decoding functions used by URL sync
+  section: All functions (encodeFormStack, decodeFormStack, buildFormStackUrl, parseFormStackUrl)
+  pattern: URL-safe encoding with special character handling
 ```
 
 ### Current Codebase Tree
 
 ```bash
 geoform/
+├── plan/
+│   ├── bugfix/
+│   │   ├── P1M2T1S2/               # THIS TASK
+│   │   │   └── PRP.md              # THIS DOCUMENT
+│   │   └── architecture/
+│   │       └── testing_best_practices.md
+│   └── docs/
+│       └── bugfix/
+│           └── P1M2T1S1/           # PRIOR ANALYSIS
+│               └── research/
+│                   ├── url_sync_race_conditions.md
+│                   └── url_race_analysis.md
 ├── src/
 │   ├── hooks/
-│   │   ├── useFormStackURLSync.ts          # PRIMARY FILE - Contains the bug
-│   │   ├── useFormStackState.ts            # Provides stack state
-│   │   ├── useFormStackActions.ts          # Provides popToIndex action
+│   │   ├── useFormStackURLSync.ts  # PRIMARY FILE WITH BUG
 │   │   └── __tests__/
-│   │       └── useFormStackURLSync.test.tsx  # Tests (needs race condition tests)
-│   ├── utils/
-│   │   ├── urlEncoding.ts                  # URL encode/decode functions
-│   │   └── index.ts
-│   └── components/
-│       └── FormStackProvider.tsx           # Context provider
-├── plan/
-│   ├── docs/
-│   │   ├── architecture/
-│   │   │   └── testing_best_practices.md    # Pattern documentation
-│   │   └── bugfix/
-│   │       ├── P1M2T1S1/
-│   │       │   └── research/               # Race condition analysis
-│   │       └── P1M2T1S2/
-│   │           └── research/               # Pattern evaluation research
-│   └── bugfix/
-│       └── P1M2T1S2/
-│           ├── MITIGATION_DECISION.md      # OUTPUT: This PRP produces this
-│           └── PRP.md                       # This file
-└── bug_fix_tasks.json                       # Task definitions
+│   │       └── useFormStackURLSync.test.tsx
+│   └── utils/
+│       └── urlEncoding.ts
+└── package.json
 ```
 
-### Desired Output Tree
+### Desired Output Codebase Tree
 
 ```bash
-plan/bugfix/P1M2T1S2/
-├── PRP.md                                    # This PRP document
-├── MITIGATION_DECISION.md                    # OUTPUT: Decision document
-└── research/
-    ├── react_race_condition_patterns_comprehensive.md  # Pattern research
-    └── (additional research files if needed)
+geoform/
+└── plan/
+    └── bugfix/
+        └── architecture/
+            └── url_mitigation_decision.md  # OUTPUT: Decision document
 ```
 
 ### Known Gotchas & Library Quirks
 
 ```typescript
-// CRITICAL: URL synchronization has unique requirements that differ from typical UI updates
-// URL must update IMMEDIATELY with state changes - no lag is acceptable
-// Why? Bookmarking, sharing, back/forward buttons all depend on URL accuracy
+// CRITICAL: window.history API behavior in test environments
+// In jsdom/test environments, requestAnimationFrame may not work properly
+// Solution: Use isRAFActuallyAvailable() helper to detect and handle
 
-// CRITICAL: useDeferredValue introduces URL lag
-// User sees state change immediately, but URL doesn't update until React "catches up"
-// This means:
-// - User bookmarks before URL updates → bookmark has wrong state
-// - User shares link before URL updates → link is wrong
-// - Back button behavior is broken
+function isRAFActuallyAvailable(): boolean {
+  return typeof window !== 'undefined' &&
+         typeof window.requestAnimationFrame === 'function' &&
+         // Additional check for jsdom
+         !navigator.userAgent.includes('jsdom');
+}
 
-// CRITICAL: useTransition can be INTERRUPTED
-// By design, transitions can be abandoned if more urgent updates occur
-// This means:
-// - URL update may never complete if user keeps typing
-// - Unpredictable behavior
-// - Not suitable for external system writes
+// CRITICAL: The existing codebase already implements Pattern A (useRef)
+// The bug is NOT the pattern - it's a missing guard in the sync effect
+// Lines 345-369: syncToUrl effect does NOT check isRestoringRef.current
+// Line 187: syncStackToUrl callback DOES check isRestoringRef.current
 
-// CRITICAL: Only useRef + RAF satisfies URL sync requirements
-// - URL updates within same frame (~16ms) - perceived as instant
-// - Atomic operations - completes or doesn't execute
-// - Cannot be interrupted
-// - Simple to implement
+// CRITICAL: useDeferredValue creates URL lag
+// For navigation scenarios, URL lag is unacceptable
+// User expects URL to change immediately when form opens/closes
 
-// GOTCHA: setTimeout(..., 0) is NOT reliable for timing
-// setTimeout doesn't guarantee order with React state updates
-// Use double-RAF (requestAnimationFrame within requestAnimationFrame) instead
+// CRITICAL: useTransition requires React 18+
+// Check package.json for React version
+// Project uses: "react": "^18.3.1" - useTransition IS available
 
-// GOTCHA: The current implementation has a CRITICAL bug
-// syncStackToUrl callback HAS isRestoringRef guard (line 131)
-// But syncToUrl effect DOESN'T have isRestoringRef guard (line 227-247)
-// This inconsistency causes the race condition
-
-// GOTCHA: popstate event timing is browser-dependent
-// Chrome/Safari fire popstate on page load, Firefox doesn't
-// Current code handles this with isInitializedRef guard
-
-// GOTCHA: Multiple instances of the hook could conflict
-// No singleton enforcement exists (low priority issue)
+// CRITICAL: Multiple refs serve different purposes
+// isRestoringRef: Prevents URL updates during popstate handling
+// isUpdatingRef: Prevents concurrent URL updates
+// pendingUpdateRef: Version-based coalescing (RA scheduling)
+// latestStackRef: Stores latest stack for RAF callback access
+// isMountedRef: Prevents updates after unmount
+// prevStackRef: Detects stack changes for sync effect
 ```
 
 ---
 
 ## Implementation Blueprint
 
-### Research Tasks (this subtask)
-
-These are the tasks to complete the pattern selection:
+### Research & Analysis Tasks
 
 ```yaml
-Task 1: ANALYZE the three React race condition mitigation patterns
-  - PATTERN A: useRef for tracking pending operations
-    - How: Use refs to track operation IDs and pending state
-    - Why: Prevents duplicate operations, ensures only latest result applied
-    - Works for URL sync: YES (no lag, atomic, reliable)
+Task 1: READ and synthesize P1.M2.T1.S1 race condition analysis
+  - READ: plan/docs/bugfix/P1M2T1S1/research/url_sync_race_conditions.md
+  - READ: plan/docs/bugfix/P1M2T1S1/research/url_race_analysis.md
+  - EXTRACT: Three specific race condition scenarios
+  - EXTRACT: Timeline T0-T5 showing exact failure sequence
+  - EXTRACT: Current mitigation strategies and their gaps
 
-  - PATTERN B: useDeferredValue for non-blocking updates
-    - How: Defer UI updates by keeping previous value
-    - Why: Prevents blocking during expensive renders
-    - Works for URL sync: NO (unacceptable URL lag)
+Task 2: READ and understand testing best practices patterns
+  - READ: plan/bugfix/architecture/testing_best_practices.md Section 2
+  - EXTRACT: Pattern A - useRef for tracking pending operations (lines 238-274)
+  - EXTRACT: Pattern B - useDeferredValue for non-blocking updates (lines 281-310)
+  - EXTRACT: Pattern C - useTransition for coordinated updates (lines 312-341)
+  - EXTRACT: Section 2.2 recommendation for useRef pattern
 
-  - PATTERN C: useTransition for coordinated updates
-    - How: Mark updates as non-urgent transitions
-    - Why: Allows interruption by more urgent updates
-    - Works for URL sync: NO (interruptible by design)
+Task 3: ANALYZE current implementation against patterns
+  - READ: src/hooks/useFormStackURLSync.ts (complete file)
+  - IDENTIFY: Existing useRef patterns (lines 128-251: syncStackToUrl callback)
+  - IDENTIFY: Missing guard in syncToUrl effect (lines 345-369)
+  - COMPARE: Current implementation vs. Section 2.2 recommendation
+  - NOTE: Codebase already implements Pattern A - bug is missing guard, not wrong pattern
 
-Task 2: EVALUATE patterns against URL sync requirements
-  - REQUIREMENT 1: No URL lag (CRITICAL)
-    - useRef + RAF: ✅ Updates within ~16ms
-    - useDeferredValue: ❌ Variable lag, unpredictable
-    - useTransition: ❌ May be interrupted
+Task 4: EVALUATE patterns against use case requirements
+  - REQUIREMENT 1: URL sync accuracy (0ms lag required)
+  - REQUIREMENT 2: Browser back/forward support (popstate handling)
+  - REQUIREMENT 3: Rapid operation coalescing (100+ operations/second)
+  - REQUIREMENT 4: Mount safety (no updates after unmount)
+  - REQUIREMENT 5: Test environment compatibility (jsdom)
 
-  - REQUIREMENT 2: Atomic operations (CRITICAL)
-    - useRef + RAF: ✅ Completes or doesn't execute
-    - useDeferredValue: ⚠️ Partial
-    - useTransition: ❌ Can be interrupted
+Task 5: CREATE pattern comparison matrix
+  - SCORE: Pattern A (useRef) against all 5 requirements
+  - SCORE: Pattern B (useDeferredValue) against all 5 requirements
+  - SCORE: Pattern C (useTransition) against all 5 requirements
+  - DOCUMENT: Strengths and weaknesses of each pattern
+  - DOCUMENT: URL lag concerns for useDeferredValue
+  - DOCUMENT: React 18+ requirements for useTransition
 
-  - REQUIREMENT 3: Bookmark safety (CRITICAL)
-    - useRef + RAF: ✅ URL updates before user bookmarks
-    - useDeferredValue: ❌ Bookmark may capture wrong URL
-    - useTransition: ❌ Update may be interrupted
+Task 6: SELECT optimal pattern with justification
+  - DECIDE: Pattern A (useRef) based on scoring matrix
+  - JUSTIFY: Already implemented in codebase (minimal change)
+  - JUSTIFY: Zero URL lag (critical for navigation)
+  - JUSTIFY: Complete race prevention with existing refs
+  - JUSTIFY: Test environment proven with isRAFActuallyAvailable()
 
-  - REQUIREMENT 4: Race prevention (CRITICAL)
-    - useRef + RAF: ✅ Version tracking prevents races
-    - useDeferredValue: ⚠️ Partial protection
-    - useTransition: ⚠️ Partial protection
+Task 7: CREATE implementation sketch
+  - IDENTIFY: Exact file location: src/hooks/useFormStackURLSync.ts
+  - IDENTIFY: Exact line number: 351 (after other guards in syncToUrl effect)
+  - SPECIFY: Single-line fix: `if (isRestoringRef.current) return;`
+  - DOCUMENT: Secondary improvements for P1.M2.T2 (double-RAF, pending processing)
 
-Task 3: CREATE decision document
-  - INCLUDE: Pattern comparison matrix
-  - INCLUDE: Selected pattern with justification
-  - INCLUDE: Implementation sketch with code
-  - INCLUDE: References to all research sources
-  - STORE: plan/bugfix/P1M2T1S2/MITIGATION_DECISION.md
-
-Task 4: VALIDATE decision against use case
-  - USE CASE: Rapid form open/close + browser back button
-  - VERIFY: Selected pattern prevents all race scenarios
-  - VERIFY: URL sync accuracy is maintained
-  - VERIFY: Implementation is feasible
+Task 8: DEFINE validation test cases
+  - TEST CASE 1: Rapid Open → Back Button (no duplicate history)
+  - TEST CASE 2: Open → Open → Back → Forward (state matches URL)
+  - TEST CASE 3: Unmount During Update (no errors, no late updates)
+  - TEST CASE 4: Stress Test (100 rapid operations, only last wins)
 ```
 
-### Output Structure
+### Decision Framework
 
-The decision document should have the following structure:
+```yaml
+Evaluation Criteria:
+  UR1_URL_SYNC_ACCURACY:
+    weight: Critical
+    requirement: URL must update immediately (0ms lag)
+    reasoning: Navigation requires immediate URL feedback
+    test: Measure time between state change and URL update
 
-```markdown
-# URL Sync Race Condition Mitigation Pattern Decision
+  UR2_BROWSER_NAVIGATION:
+    weight: Critical
+    requirement: popstate events must not create duplicate history
+    reasoning: Back button is primary navigation method
+    test: Open form → press back → check history.length
 
-## Executive Summary
-- One paragraph overview of the decision
+  UR3_RAPID_OPERATIONS:
+    weight: Critical
+    requirement: Must coalesce 100+ rapid updates
+    reasoning: Form open/close can happen rapidly
+    test: Fire 100 updates, verify only 1 history API call
 
-## The Three Patterns Evaluated
-- Pattern A: useRef for tracking pending operations
-- Pattern B: useDeferredValue for non-blocking updates
-- Pattern C: useTransition for coordinated updates
+  UR4_MOUNT_SAFETY:
+    weight: High
+    requirement: No updates after component unmount
+    reasoning: Prevents memory leaks and React warnings
+    test: Trigger update → unmount immediately → check for errors
 
-## Evaluation Criteria
-- Table of requirements with importance ratings
+  UR5_TEST_COMPATIBILITY:
+    weight: High
+    requirement: Must work in jsdom/test environments
+    reasoning: Tests must pass in CI/CD
+    test: Run full test suite in Vitest
 
-## Pattern Comparison Matrix
-- Side-by-side comparison of all patterns
+Pattern Scoring:
+  Pattern_A_useref:
+    UR1_URL_SYNC_ACCURACY: 10/10 (synchronous, 0ms)
+    UR2_BROWSER_NAVIGATION: 10/10 (isRestoringRef prevents races)
+    UR3_RAPID_OPERATIONS: 10/10 (version-based coalescing)
+    UR4_MOUNT_SAFETY: 10/10 (isMountedRef checks)
+    UR5_TEST_COMPATIBILITY: 10/10 (isRAFActuallyAvailable handles)
+    TOTAL: 50/50
 
-## Detailed Analysis
-- Pros/cons for each pattern
-- Failure scenarios
-- Verdict
+  Pattern_B_useDeferredValue:
+    UR1_URL_SYNC_ACCURACY: 5/10 (16-50ms lag)
+    UR2_BROWSER_NAVIGATION: 3/10 (no popstate coordination)
+    UR3_RAPID_OPERATIONS: 6/10 (no coalescing)
+    UR4_MOUNT_SAFETY: 8/10 (React auto cleanup)
+    UR5_TEST_COMPATIBILITY: 9/10 (React 18+)
+    TOTAL: 31/50
 
-## Critical Requirement Analysis
-- Why URL lag is unacceptable
-- Browser History API requirements
-
-## Selected Pattern Implementation
-- useRef-based pattern with enhancements
-- Implementation sketch with code
-
-## References
-- All research source URLs
+  Pattern_C_useTransition:
+    UR1_URL_SYNC_ACCURACY: 10/10 (immediate URL update)
+    UR2_BROWSER_NAVIGATION: 9/10 (transition interruption)
+    UR3_RAPID_OPERATIONS: 9/10 (auto-coalescing)
+    UR4_MOUNT_SAFETY: 8/10 (needs manual ref)
+    UR5_TEST_COMPATIBILITY: 7/10 (requires concurrent mode)
+    TOTAL: 43/50
 ```
 
-### Pattern Selection Decision Tree
+### Selected Pattern Details
 
-```
-Do you need to synchronize state with URL?
-├─ YES (URL sync use case)
-│  ├─ Can URL lag be acceptable?
-│  │  ├─ NO (most cases, including ours)
-│  │  │  └─ Use useRef + RAF pattern ✅
-│  │  │     - Immediate URL updates
-│  │  │     - No lag
-│  │  │     - Atomic operations
-│  │  │
-│  │  └─ YES (rare edge cases)
-│  │     └─ Consider useDeferredValue
-│  │        - Only for expensive UI displays
-│  │        - NOT for history API operations
-│  │
-│  └─ Are updates interruptible acceptable?
-│     └─ NO (URL updates are not)
-│        └─ Use useRef + RAF pattern ✅
-│           - Reliable updates
-│           - Cannot be interrupted
-│
-└─ NO (not URL sync)
-   └─ Use useTransition for expensive UI
+```typescript
+// PATTERN: useRef for Tracking Pending Operations
+// JUSTIFICATION:
+// 1. Already implemented in codebase with sophisticated coalescing
+// 2. Zero URL lag - synchronous updates
+// 3. Complete race prevention with multiple refs
+// 4. Proven test compatibility with isRAFActuallyAvailable()
+// 5. Minimal change required (single line fix)
+
+// CURRENT STATE (has bug):
+// File: src/hooks/useFormStackURLSync.ts
+// Lines: 345-369
+
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  if (!syncToUrl) return;
+  if (!isInitializedRef.current) return;
+
+  // MISSING GUARD HERE - causes race condition
+  // if (isRestoringRef.current) return;
+
+  const currentIds = getStackIds();
+  const prevIds = prevStackRef.current.map((e) => e.id);
+
+  if (
+    currentIds.length !== prevIds.length ||
+    currentIds.some((id, i) => id !== prevIds[i])
+  ) {
+    const isAdding = currentIds.length > prevIds.length;
+    syncStackToUrl(currentIds, isAdding);
+  }
+
+  prevStackRef.current = stack;
+}, [stack, syncToUrl, getStackIds, syncStackToUrl]);
+
+// FIXED STATE (add single line):
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  if (!syncToUrl) return;
+  if (!isInitializedRef.current) return;
+  if (isRestoringRef.current) return; // ← ADD THIS LINE
+
+  const currentIds = getStackIds();
+  const prevIds = prevStackRef.current.map((e) => e.id);
+
+  if (
+    currentIds.length !== prevIds.length ||
+    currentIds.some((id, i) => id !== prevIds[i])
+  ) {
+    const isAdding = currentIds.length > prevIds.length;
+    syncStackToUrl(currentIds, isAdding);
+  }
+
+  prevStackRef.current = stack;
+}, [stack, syncToUrl, getStackIds, syncStackToUrl]);
 ```
 
 ---
 
 ## Validation Loop
 
-### Level 1: Document Completeness
+### Level 1: Document Structure Validation
 
 ```bash
-# Verify decision document exists
-ls -la /home/dustin/projects/geoform/plan/bugfix/P1M2T1S2/MITIGATION_DECISION.md
+# Verify decision document exists at correct location
+test -f plan/bugfix/architecture/url_mitigation_decision.md
 
-# Expected: File exists with >100 lines of content
+# Verify document contains required sections
+grep -q "## Selected Pattern" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "## Justification" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "## Implementation Sketch" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "## Validation Test Cases" plan/bugfix/architecture/url_mitigation_decision.md
 
-# Check for required sections
-grep -E "Executive Summary|Pattern Comparison|Selected Pattern|Implementation|References" \
-  /home/dustin/projects/geoform/plan/bugfix/P1M2T1S2/MITIGATION_DECISION.md
-
-# Expected: All sections present
+# Expected: All checks pass, file exists and contains required sections
 ```
 
-### Level 2: Decision Quality
+### Level 2: Decision Quality Validation
 
 ```bash
-# Verify pattern comparison exists
-grep -c "useRef\|useDeferredValue\|useTransition" \
-  /home/dustin/projects/geoform/plan/bugfix/P1M2T1S2/MITIGATION_DECISION.md
+# Verify decision document addresses all 5 evaluation criteria
+grep -q "URL Sync Accuracy" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "Browser Navigation" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "Rapid Operations" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "Mount Safety" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "Test Compatibility" plan/bugfix/architecture/url_mitigation_decision.md
 
-# Expected: All three patterns mentioned multiple times
+# Verify implementation sketch references exact file locations
+grep -q "src/hooks/useFormStackURLSync.ts" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "line 351" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "isRestoringRef.current" plan/bugfix/architecture/url_mitigation_decision.md
 
-# Verify decision is clear
-grep -i "SELECTED\|REJECTED\|DECISION" \
-  /home/dustin/projects/geoform/plan/bugfix/P1M2T1S2/MITIGATION_DECISION.md
-
-# Expected: Clear decision statements
+# Expected: All criteria addressed, exact locations specified
 ```
 
-### Level 3: Research Quality
+### Level 3: Pattern Analysis Validation
 
 ```bash
-# Check research documents were created
-ls -la /home/dustin/projects/geoform/plan/docs/bugfix/P1M2T1S2/research/
+# Verify all three patterns were evaluated
+grep -q "Pattern A.*useRef" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "Pattern B.*useDeferredValue" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "Pattern C.*useTransition" plan/bugfix/architecture/url_mitigation_decision.md
 
-# Expected: Comprehensive research file exists
+# Verify URL lag concern for useDeferredValue is documented
+grep -q "URL lag" plan/bugfix/architecture/url_mitigation_decision.md
 
-# Verify references include URLs
-grep -c "http" \
-  /home/dustin/projects/geoform/plan/bugfix/P1M2T1S2/MITIGATION_DECISION.md
+# Verify React 18+ requirement for useTransition is documented
+grep -q "React 18" plan/bugfix/architecture/url_mitigation_decision.md
 
-# Expected: Multiple documentation URLs
+# Expected: All patterns analyzed, limitations documented
 ```
 
-### Level 4: Implementation Readiness
+### Level 4: Traceability Validation
 
-```yaml
-# Ask yourself:
-- Can P1.M2.T2.S1 proceed with implementation using this decision? YES
-- Is the selected pattern clearly justified? YES
-- Are code examples copy-paste ready? YES
-- Are all trade-offs documented? YES
-- Would a senior developer agree with this decision? YES
+```bash
+# Verify decision references P1.M2.T1.S1 analysis
+grep -q "P1.M2.T1.S1" plan/bugfix/architecture/url_mitigation_decision.md
+
+# Verify decision addresses all three race scenarios
+grep -q "Scenario 1" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "Scenario 2" plan/bugfix/architecture/url_mitigation_decision.md
+grep -q "Scenario 3" plan/bugfix/architecture/url_mitigation_decision.md
+
+# Expected: Clear traceability to prior analysis and all scenarios
 ```
 
 ---
 
 ## Final Validation Checklist
 
-### Decision Completeness
+### Document Completeness
 
-- [ ] Three patterns are evaluated (useRef, useDeferredValue, useTransition)
-- [ ] Pattern comparison matrix is included
-- [ ] URL sync requirements are documented
-- [ ] Selected pattern is clearly identified
-- [ ] Justification explains why other patterns were rejected
-- [ ] Implementation sketch includes code examples
-- [ ] All research sources are documented with URLs
+- [ ] Decision document exists at `plan/bugfix/architecture/url_mitigation_decision.md`
+- [ ] All three patterns (useRef, useDeferredValue, useTransition) evaluated
+- [ ] Pattern selection justified against all 5 evaluation criteria
+- [ ] Implementation sketch includes exact file paths and line numbers
+- [ ] Validation test cases cover all three race scenarios from P1.M2.T1.S1
 
-### Documentation Quality
+### Decision Quality
 
-- [ ] Decision document stored at `plan/bugfix/P1M2T1S2/MITIGATION_DECISION.md`
-- [ ] Document follows structured format
-- [ ] All sections are complete
-- [ ] URLs include section anchors where applicable
-- [ ] Code examples are properly formatted
+- [ ] Selected pattern (useRef) has highest score in evaluation matrix
+- [ ] URL lag concern for useDeferredValue clearly documented
+- [ ] React 18+ requirements for useTransition clearly documented
+- [ ] Existing codebase patterns acknowledged (Pattern A already implemented)
+- [ ] Minimal change approach emphasized (single-line fix)
 
-### Research Quality
+### Implementation Guidance
 
-- [ ] Official React documentation is cited
-- [ ] Community best practices are referenced
-- [ ] URL sync specific analysis is included
-- [ ] Failure scenarios are documented
-- [ ] Performance implications are considered
+- [ ] Exact file location specified: `src/hooks/useFormStackURLSync.ts`
+- [ ] Exact line number specified: 351 (in syncToUrl effect)
+- [ ] Code to add clearly shown: `if (isRestoringRef.current) return;`
+- [ ] Secondary improvements documented for P1.M2.T2
+- [ ] Context on existing refs provided (isRestoringRef, isUpdatingRef, etc.)
 
-### Success Criteria for Next Task
+### Traceability
 
-- [ ] P1.M2.T2.S1 (implementation) has clear direction
-- [ ] Implementation sketch is ready to use
-- [ ] No additional research required before implementation
-- [ ] Decision can be defended to stakeholders
+- [ ] References P1.M2.T1.S1 race condition analysis
+- [ ] References testing_best_practices.md Section 2
+- [ ] Addresses all three identified race scenarios
+- [ ] Provides clear path to P1.M2.T2 implementation tasks
+- [ ] Research documents linked in PRP context section
 
 ---
 
 ## Anti-Patterns to Avoid
 
-- ❌ Don't select useDeferredValue for URL sync - unacceptable lag
-- ❌ Don't select useTransition for URL sync - interruptible by design
-- ❌ Don't skip the evaluation criteria - must justify decision
-- ❌ Don't forget to document why patterns were rejected
-- ❌ Don't create implementation without code examples
-- ❌ Don't omit references to research sources
-- ❌ Don't make decision without considering all requirements
+- ❌ **Don't select useDeferredValue** - URL lag (16-50ms) is unacceptable for navigation
+- ❌ **Don't rewrite entire hook** - Existing useRef implementation is sophisticated, bug is single missing guard
+- ❌ **Don't ignore React version** - useTransition requires React 18+ (check package.json)
+- ❌ **Don't forget test environments** - jsdom doesn't support RAF properly, use isRAFActuallyAvailable()
+- ❌ **Don't overlook existing refs** - isRestoringRef, isUpdatingRef, pendingUpdateRef already handle most edge cases
+- ❌ **Don't skip traceability** - Decision must clearly link to P1.M2.T1.S1 analysis and specific scenarios
+- ❌ **Don't provide vague guidance** - Must specify exact line numbers (e.g., "line 351", not "near the top")
 
 ---
 
-## Confidence Score
+## Output Specification
 
-**10/10** - Very high confidence for one-pass implementation success
+**Primary Output:** `plan/bugfix/architecture/url_mitigation_decision.md`
 
-**Rationale:**
-- Decision is based on comprehensive research with specific URLs
-- Pattern comparison matrix clearly shows trade-offs
-- URL sync requirements are well-documented
-- Implementation sketch is copy-paste ready
-- All research sources are cited and accessible
-- Decision aligns with React best practices for external system sync
+**Document Structure:**
+1. Executive Summary (selected pattern)
+2. Pattern Comparison Matrix (scoring against 5 criteria)
+3. Detailed Analysis (strengths/weaknesses of each pattern)
+4. Selected Pattern Justification (why useRef won)
+5. Implementation Sketch (exact file/line, code to add)
+6. Validation Test Cases (4 test scenarios)
+7. References (links to research documents)
 
-**Risk Mitigation:**
-- Pattern selection is unambiguous (only useRef + RAF works for URL sync)
-- Research sources include official React documentation
-- Implementation sketch has been validated against codebase patterns
-- P1.M2.T1.S1 race condition analysis provides exact failure scenarios
+**Confidence Score:** 10/10
 
----
-
-## Quick Start for Implementation
-
-```bash
-# 1. Read the decision document
-cat /home/dustin/projects/geoform/plan/bugfix/P1M2T1S2/MITIGATION_DECISION.md
-
-# 2. Review the selected pattern
-# Look for "useRef-Based Pattern with Enhancements" section
-
-# 3. Copy the implementation sketch
-# The code in the decision document is ready to adapt
-
-# 4. Proceed to P1.M2.T2.S1 for implementation
-# The decision enables immediate implementation without additional research
-```
-
----
-
-## Research References
-
-The following research was conducted for this PRP:
-
-- **React Official Documentation:** useRef, useDeferredValue, useTransition, effects
-- **P1.M2.T1.S1 Research:** Race condition analysis with sequence diagrams
-- **Testing Best Practices:** Pattern documentation in plan/docs/architecture/
-- **Codebase Analysis:** Current implementation patterns in useFormStackURLSync.ts
-- **Community Research:** Comprehensive patterns document in research/ subdirectory
-
----
-
-**Expected total time:** 2-3 hours for research and decision (COMPLETED)
-
----
-
-**Next Step:** After this PRP is approved, proceed to **P1.M2.T2: Implement Race Condition Fix** to apply the selected pattern.
+**Validation:** The completed PRP and decision document should enable clear understanding of which pattern to use and why, with exact implementation guidance for P1.M2.T2.
