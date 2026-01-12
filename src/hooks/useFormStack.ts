@@ -38,6 +38,12 @@ export interface UseFormStackReturn {
    * different from the form lifecycle pattern where FormStackRenderer injects `onSubmit`/`onCancel`
    * callbacks that properly resolve the Promise returned by `openForm()`.
    *
+   * **Promise Pattern Bypass Warning:** Calling `closeForm()` directly skips the Promise resolution
+   * step. When a form calls `onSubmit(data)` or `onCancel()`, FormStackRenderer first resolves the
+   * deferred promise (which unblocks the parent's `await openForm()`), then calls `onClose()` which
+   * triggers `closeForm()`. Direct `closeForm()` calls bypass promise resolution, leaving the parent's
+   * await hanging indefinitely and causing unexpected application state.
+   *
    * @throws {Error} When used outside FormStackProvider context
    *
    * @see {@link FormProps} - Interface forms should implement instead of calling closeForm
