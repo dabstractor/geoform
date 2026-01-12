@@ -1,1051 +1,567 @@
-# Product Requirement Prompt (PRP): Race Condition Test Suite for useFormStackURLSync
-
-**Work Item**: P1.M2.T2.S3
-**Task**: Write tests for race condition scenarios
-**Status**: READY FOR IMPLEMENTATION
-**Confidence Score**: 9/10 for one-pass implementation success
+name: "P1.M2.T2.S3: Write tests for race condition scenarios in useFormStackURLSync"
+description: |
 
 ---
 
 ## Goal
 
-**Feature Goal**: Write comprehensive integration tests for `useFormStackURLSync` hook to verify that race condition protection mechanisms (RAF-based coalescing, version tracking, isMountedRef guards) work correctly under rapid successive operations and browser navigation scenarios.
+**Feature Goal**: Write comprehensive integration tests for race condition protection mechanisms in the useFormStackURLSync hook, ensuring URL state consistency under rapid operations and browser navigation.
 
-**Deliverable**: Extended `src/hooks/__tests__/useFormStackURLSync.test.tsx` with new test suite covering:
-1. Rapid openForm calls (3+ in quick succession)
-2. Open form → immediate browser back
-3. Open → open → back → forward sequence
-4. URL state consistency verification throughout operations
-5. Verification of no duplicate history entries
+**Deliverable**: New test suite in `src/hooks/__tests__/useFormStackURLSync.test.tsx` covering rapid form operations, browser navigation race conditions, mount/unmount safety, and URL state consistency.
 
 **Success Definition**:
-- All race condition scenarios have passing tests
-- Tests verify RAF-based coalescing prevents duplicate URL updates
-- Tests verify isMountedRef guards prevent state updates after unmount
-- Tests verify URL state remains consistent during rapid operations
-- Tests verify no duplicate history entries are created
-- All existing tests continue to pass
-- Test coverage increases for race condition code paths
+- All test scenarios from the work item pass successfully
+- Tests verify RAF-based coalescing prevents duplicate history API calls
+- Tests verify isMountedRef pattern prevents memory leaks and React warnings
+- Tests verify URL state remains consistent throughout rapid operations
+- Tests verify browser back/forward navigation works correctly under race conditions
+- Zero console errors or warnings during test execution
+- Tests can be added to existing test file without breaking existing tests
 
 ## User Persona (if applicable)
 
-**Target User**: Developer/QA maintaining the codebase
+**Target User**: QA Engineer, Developer maintaining the useFormStackURLSync hook
 
-**Use Case**: Validating that the race condition fixes from P1.M2.T2.S1 and P1.M2.T2.S2 work correctly under stress conditions
+**Use Case**: Ensuring the hook's race condition protection mechanisms work correctly under stress conditions before deployment to production
 
 **User Journey**:
-1. Developer adds race condition protection to hook
-2. Developer runs new test suite to verify fixes work
-3. Tests catch regressions if race condition protection is broken
-4. CI/CD pipeline runs tests automatically on every commit
+1. Developer runs test suite to verify race condition protection
+2. Tests simulate rapid user interactions and browser navigation
+3. Tests verify URL state consistency and no memory leaks
+4. Developer gains confidence in hook's stability under race conditions
 
 **Pain Points Addressed**:
-- No automated verification that race condition fixes work
-- Manual testing is time-consuming and error-prone
-- Regressions can occur without detection
-- Hard to reproduce race conditions consistently
+- Uncertainty whether race condition fixes actually work in practice
+- Fear of memory leaks from pending RAF callbacks
+- Concerns about URL state corruption during rapid operations
+- Need to verify browser navigation doesn't break URL sync
 
 ## Why
 
-- **Business value**: Ensures reliable URL sync behavior in production, prevents customer-facing bugs from race conditions
-- **Integration**: Completes the P1.M2.T2 race condition fix trilogy (S1: implement coalescing, S2: add unmount guards, S3: test coverage)
-- **Problems solved**: Lack of automated test coverage for race condition scenarios, potential for undetected regressions
-
----
+- **Production Stability**: Race conditions in URL sync can cause broken navigation, lost state, and poor user experience
+- **Regression Prevention**: Tests ensure future changes don't reintroduce race condition bugs
+- **Confidence in Fixes**: P1.M2.T2.S1 and P1.M2.T2.S2 implemented protection mechanisms that need validation
+- **Edge Case Coverage**: Browser navigation during rapid updates is difficult to test manually but critical for UX
 
 ## What
 
-### Technical Implementation
-
-Add new test suite to `src/hooks/__tests__/useFormStackURLSync.test.tsx`:
-
-1. **Test suite: "Race Condition Protection"**
-   - Tests for RAF-based coalescing (rapid URL updates)
-   - Tests for version-based update coalescing
-   - Tests for mount/unmount safety
-
-2. **Test suite: "Rapid Form Operations"**
-   - Rapid openForm calls (3+ in succession)
-   - Rapid closeForm calls
-   - Mixed open/close operations
-
-3. **Test suite: "Browser Navigation Race Conditions"**
-   - Open form → immediate browser back
-   - Open → open → back → forward sequence
-   - Rapid back/forward button clicks
-
-4. **Test suite: "URL State Consistency"**
-   - Verify URL matches stack state after operations
-   - Verify no duplicate history entries
-   - Verify history state contains correct form IDs
+Write integration tests covering these scenarios:
 
 ### Success Criteria
 
-- [ ] New test suite "Race Condition Protection" added
-- [ ] New test suite "Rapid Form Operations" added
-- [ ] New test suite "Browser Navigation Race Conditions" added
-- [ ] New test suite "URL State Consistency" added
-- [ ] All new tests pass
-- [ ] All existing tests continue to pass
-- [ ] Test coverage increases for race condition code paths
-- [ ] Tests use fake timers appropriately (vi.useFakeTimers)
-- [ ] Tests use proper act() wrapping for state changes
-- [ ] Tests verify both behavior and absence of side effects
-
----
+- [ ] Test rapid openForm calls (3+ in quick succession) verify URL state consistency
+- [ ] Test open form → immediate browser back scenario
+- [ ] Test open → open → back → forward navigation sequence
+- [ ] Test URL state remains consistent throughout all operations
+- [ ] Test no duplicate history entries are created
+- [ ] Test mount/unmount safety prevents memory leaks
+- [ ] All tests pass with zero console errors
 
 ## All Needed Context
 
 ### Context Completeness Check
 
-**"No Prior Knowledge" test**: If someone knew nothing about this codebase, would they have everything needed to implement this successfully?
-
-**Answer**: YES - This PRP provides:
-- Complete existing test file to understand patterns
-- Research on RTL race condition testing patterns
-- Research on Vitest fake timers
-- Complete implementation of the hook being tested
-- All integration points and dependencies
-- Specific test scenarios with code patterns
-- Known gotchas specific to this codebase
+**"No Prior Knowledge" test validation**: This PRP provides all context needed including:
+- Complete hook API with exact type signatures
+- Existing test infrastructure and patterns
+- Mock setup patterns for window.history API
+- Code examples from existing tests
+- External documentation URLs for React Testing Library and Vitest
 
 ### Documentation & References
 
 ```yaml
 # MUST READ - Include these in your context window
 
-# EXTERNAL DOCUMENTATION
-- url: https://vitest.dev/api/mock-functions.html
-  why: Vitest mock functions documentation - vi.useFakeTimers(), vi.advanceTimersByTime()
-  critical: Required for testing RAF-based coalescing
+# Hook Implementation (Modified in P1.M2.T2.S2)
+- file: src/hooks/useFormStackURLSync.ts
+  why: Complete implementation including race condition protection mechanisms added in P1.M2.T2.S2
+  pattern: Extract isMountedRef pattern (lines 158-170), RAF-based coalescing (lines 184-251), version-based update tracking (lines 193-209)
+  critical: The hook uses dual execution paths - RAF for production, synchronous for tests (detected by isRAFActuallyAvailable at lines 15-41)
+  gotcha: Test environment detection happens via NODE_ENV='test' and vi/vitest worker detection - tests run synchronously, not with actual RAF
 
-- url: https://vitest.dev/api/vi.html
-  why: Vitest vi reference - timer control methods
-  critical: Timer advancement strategies for RAF callbacks
+# Existing Tests (Baseline for new tests)
+- file: src/hooks/__tests__/useFormStackURLSync.test.tsx
+  why: Contains existing test patterns and mock setup that should be reused and extended
+  pattern: History API mock setup (lines 26-120), wrapper pattern (lines 13-16), console error suppression (lines 374-383)
+  critical: Tests already exist for race conditions starting at line 451 - review these to understand what's already covered
+  gotcha: The existing tests already cover most scenarios - verify gaps before adding new tests
 
+# Test Configuration
+- file: vitest.config.ts
+  why: Test framework configuration - Vitest with jsdom environment
+  pattern: Environment is 'jsdom', setupFiles is './vitest.setup.ts', test pattern matches 'src/**/*.{test,spec}.{ts,tsx}'
+  gotcha: Using Vitest 2.1.0+ with v8 coverage provider
+
+- file: vitest.setup.ts
+  why: Global test setup for cleanup and mock clearing
+  pattern: afterEach cleanup and vi.clearAllMocks()
+  critical: Tests automatically get cleanup and mock clearing
+
+# Related Hooks (For Understanding Context)
+- file: src/hooks/useFormStack.ts
+  why: Main form stack hook that useFormStackURLSync integrates with
+  pattern: Understanding openForm/closeForm API for testing
+
+- file: src/hooks/useFormStackState.ts
+  why: Provides stack state that URL sync reads from
+  pattern: Stack structure is { id: string }[]
+
+# External Documentation
 - url: https://testing-library.com/docs/react-testing-library/api#renderhook
-  why: React Testing Library renderHook API documentation
-  critical: Understanding renderHook, act(), and waitFor patterns
+  why: renderHook API for testing React hooks
+  section: renderHook
+
+- url: https://testing-library.com/docs/dom-testing-library/api-async#waitfor
+  why: waitFor for async assertions in tests
+  section: waitFor
 
 - url: https://testing-library.com/docs/react-testing-library/api#act
-  why: React Testing Library act() API documentation
-  critical: Wrapping state updates in tests
+  why: act() wrapper for state changes in tests
+  section: act
 
-- url: https://react.dev/learn/running-tests-simultaneously
-  why: React documentation on test isolation and cleanup
-  critical: Understanding beforeEach/afterEach patterns
+- url: https://vitest.dev/api/vi#vi-usefaketimers
+  why: Vitest fake timers for testing requestAnimationFrame behavior
+  section: vi.useFakeTimers
 
-# INTERNAL RESEARCH DOCUMENTS
-- file: /home/dustin/projects/geoform/plan/bugfix/P1M2T2S3/research/rtl_race_condition_patterns.md
-  why: Comprehensive research on React Testing Library patterns for race conditions
-  critical: 18 specific test patterns with runnable code examples
-  section: Full document - especially "Testing Rapid Successive State Changes" section
+- url: https://developer.mozilla.org/en-US/docs/Web/API/History/pushState
+  why: Understanding pushState for mocking
+  section: pushState
 
-- file: /home/dustin/projects/geoform/plan/bugfix/P1M2T2S3/research/vitest_fake_timers.md
-  why: Research on Vitest fake timers for RAF-based coalescing
-  critical: Timer advancement strategies, RAF testing patterns
-  section: "RAF Coalescing Patterns" section
+- url: https://developer.mozilla.org/en-US/docs/Web/API/Window/popstate_event
+  why: Understanding popstate event for browser navigation simulation
+  section: popstate event
 
-- file: /home/dustin/projects/geoform/plan/bugfix/P1M2T2S3/research/vitest_fake_timer_examples.ts
-  why: Executable code examples for fake timer testing
-  critical: Ready-to-run test patterns for useFormStackURLSync
-  section: Full file
+# Architecture Documentation (if available)
+- docfile: plan/bugfix/architecture/system_context.md
+  why: System context for URL sync and race condition analysis
+  section: Race condition scenarios and protection patterns
 
-- file: /home/dustin/projects/geoform/plan/bugfix/P1M2T2S3/research/README.md
-  why: Quick reference summary of research findings
-  critical: Key takeaways and recommended testing strategy
-
-# PREVIOUS PRPs - CONTEXT FOR WHAT WAS IMPLEMENTED
-- file: /home/dustin/projects/geoform/plan/docs/bugfix/P1M2T2S1/PRP.md
-  why: PRP for useRef-based pending update tracking (RAF coalescing)
-  critical: Understanding the coalescing pattern that needs testing
-  section: Lines 300-398 (Implementation Patterns)
-
-- file: /home/dustin/projects/geoform/plan/docs/bugfix/P1M2T2S2/PRP.md
-  why: PRP for isMountedRef pattern (unmount safety)
-  critical: Understanding the unmount guards that need testing
-  section: Lines 339-550 (Implementation Patterns)
-
-# CODE FILES
-- file: /home/dustin/projects/geoform/src/hooks/useFormStackURLSync.ts
-  why: TARGET FILE - The implementation being tested
-  pattern: RAF-based coalescing (lines 184-251), isMountedRef guards (lines 161-170, 200-238)
-  gotcha: isRAFActuallyAvailable() bypasses RAF in test environments
-  line_range: 1-377 (entire file)
-
-- file: /home/dustin/projects/geoform/src/hooks/__tests__/useFormStackURLSync.test.tsx
-  why: TARGET FILE - Add new test suites to this file
-  pattern: Existing test structure, mock setup, wrapper component
-  section: Lines 1-387 (entire file)
-
-- file: /home/dustin/projects/geoform/src/hooks/__tests__/useFormStack.test.tsx
-  why: Reference for hook testing patterns
-  pattern: renderHook, act(), wrapper, describe blocks
-
-- file: /home/dustin/projects/geoform/plan/architecture/testing_strategy.md
-  why: Overall testing strategy for the project
-  critical: Test philosophy, coverage goals, organization
-  section: "Unit Testing Strategy" section
-
-# CONFIGURATION FILES
-- file: /home/dustin/projects/geoform/vitest.config.ts
-  why: Test configuration
-  pattern: jsdom environment, test match patterns
-
-- file: /home/dustin/projects/geoform/package.json
-  why: Project scripts
-  pattern: "test": "vitest", "test:coverage": "vitest --coverage"
+- docfile: COMPREHENSIVE_TESTING_RESEARCH_2025.md
+  why: Consolidated testing research including RAF patterns, race condition testing, and best practices
+  section: Complete reference for React Testing Library patterns, fake timers, and history API mocking
 ```
 
-### Current Codebase Tree
+### Current Codebase tree
 
 ```bash
-geoform/
-├── src/
-│   ├── hooks/
-│   │   ├── useFormStackURLSync.ts              # Implementation under test
-│   │   ├── useFormStack.ts
-│   │   ├── useFormStackState.ts
-│   │   ├── useFormStackActions.ts
-│   │   └── __tests__/
-│   │       ├── useFormStackURLSync.test.tsx    # TARGET FILE - Add tests here
-│   │       └── useFormStack.test.tsx
-│   ├── utils/
-│   │   └── index.ts                            # URL encoding utilities
-│   └── components/
-│       └── FormStackProvider.tsx
-├── plan/
-│   └── bugfix/
-│       └── P1M2T2S3/
-│           ├── PRP.md                          # This file
-│           └── research/
-│               ├── rtl_race_condition_patterns.md
-│               ├── vitest_fake_timers.md
-│               ├── vitest_fake_timer_examples.ts
-│               └── README.md
-├── vitest.config.ts
-├── package.json
-└── tsconfig.json
+src/
+├── hooks/
+│   ├── useFormStackURLSync.ts          # Hook being tested (modified in P1.M2.T2.S2)
+│   ├── useFormStack.ts                 # Main form stack hook
+│   ├── useFormStackState.ts            # State management
+│   ├── useFormStackActions.ts          # Action methods (popToIndex)
+│   ├── __tests__/
+│   │   ├── useFormStackURLSync.test.tsx  # EXISTING TESTS - EXTEND THIS FILE
+│   │   └── useFormStack.test.tsx       # Reference for test patterns
+├── components/
+│   └── FormStackProvider.tsx           # Provider wrapper for tests
+├── utils/
+│   └── index.ts                        # URL building/parsing utilities
+vitest.config.ts                        # Test configuration
+vitest.setup.ts                         # Global test setup
 ```
 
-### Desired Codebase Tree with Changes
+### Desired Codebase tree with files to be added
 
 ```bash
-# No new files - only additions to existing test file
-src/hooks/__tests__/useFormStackURLSync.test.tsx  # ADD: New test suites
+# No new files needed - extend existing test file
+src/hooks/__tests__/useFormStackURLSync.test.tsx  # ADD NEW TEST CASES TO THIS FILE
 ```
 
-### Known Gotchas of This Codebase & Library Quirks
+### Known Gotchas of our codebase & Library Quirks
 
 ```typescript
-// CRITICAL: isRAFActuallyAvailable() bypasses RAF in test environments
-// The hook detects test environments and executes updates synchronously
-// This means RAF-based coalescing cannot be tested directly without modification
-// Solution: Tests verify behavior (coalescing works), not implementation detail
+// CRITICAL: Vitest/jsdom doesn't execute requestAnimationFrame callbacks
+// The hook detects test environment and executes synchronously instead
+// See: isRAFActuallyAvailable() at lines 15-41 of useFormStackURLSync.ts
+// Do NOT use vi.useFakeTimers() unless explicitly testing RAF path
+// Using fake timers requires mocking the environment detection
 
-// CRITICAL: Existing mock setup uses vi.fn() for history API
-// mockPushState and mockReplaceState are already set up in beforeEach
-// Use these mocks to verify no duplicate calls occur
+// CRITICAL: All state changes MUST be wrapped in act()
+// Failing to wrap state changes causes "update not wrapped in act()" warnings
+act(() => {
+  result.current.openForm({ id: 'form-1', component: () => null });
+});
 
-// CRITICAL: popstateHandler is captured in addEventListener mock
-// To trigger popstate events, call: popstateHandler?.({ state: { forms: [...] } })
-// This is already set up in existing test patterns
+// CRITICAL: Console.error suppression pattern for testing error cases
+// Tests should suppress expected errors to avoid cluttering test output
+const originalError = console.error;
+beforeEach(() => { console.error = vi.fn(); });
+afterEach(() => { console.error = originalError; });
 
-// CRITICAL: FormStackProvider wrapper is required
-// renderHook(() => useFormStackURLSync(), { wrapper })
-// The wrapper is defined at top of test file
+// GOTCHA: popstate handler is captured via addEventListener mock
+// The existing test setup captures popstateHandler variable (line 24)
+// Use this to simulate browser back/forward navigation
+popstateHandler?.({ state: { forms: ['form-1'] } } as PopStateEvent);
 
-// CRITICAL: use act() for all state changes
-// Any operation that modifies React state must be wrapped in act()
-// Pattern: act(() => { result.current.openForm(...); })
+// GOTCHA: History API mocks update window.location to reflect URL changes
+// This allows getUrlState() to return correct values in tests
+// See lines 28-83 for the mock implementation
 
-// CRITICAL: waitFor for async operations
-// Use waitFor for assertions that depend on async updates
-// Pattern: await waitFor(() => expect(onRestore).toHaveBeenCalled());
+// GOTCHA: The test suite already includes race condition tests
+// Lines 451-1182 contain extensive race condition tests
+// Review before adding new tests to avoid duplication
 
-// CRITICAL: Error suppression pattern
-// For tests that expect errors, use console.error suppression
-// Pattern: console.error = vi.fn(); // beforeEach
-//          console.error = originalError; // afterEach
+// GOTCHA: useFormStackWithURLSync helper hook (lines 456-461)
+// Combines useFormStack, useFormStackActions, and useFormStackURLSync
+// Use this for testing integration between all hooks
 
-// CRITICAL: Fake timers require cleanup
-// If using vi.useFakeTimers(), MUST restore in afterEach
-// Pattern: beforeEach(() => { vi.useFakeTimers(); });
-//          afterEach(() => { vi.useRealTimers(); });
-
-// CRITICAL: Test environment uses jsdom, not real browser
-// window.history.pushState doesn't actually navigate
-// Tests must verify mock calls, not actual browser behavior
-
-// CRITICAL: React Testing Library version
-// Using @testing-library/react@16.3.1 with modern APIs
-// renderHook, act(), waitFor are all available
-
-// GOTCHA: openForm is async but tests don't need to await
-// useFormStack.openForm returns a Promise
-// But for URL sync testing, we don't care about the promise resolution
-
-// GOTCHA: URL sync depends on stack changes
-// Must use useFormStackActions to modify stack
-// This triggers URL sync effect automatically
-
-// GOTCHA: History state is mocked
-// window.history.state is set in mock but doesn't persist
-// Verify using mock calls, not state inspection
-
-// GOTCHA: Multiple RAF callbacks may be scheduled
-// When testing rapid operations, multiple RAF callbacks may be pending
-// Advance timers by multiple frames if needed: vi.advanceTimersByTime(32) for 2 frames
-
-// GOTCHA: isMountedRef pattern doesn't require special test setup
-// The ref is automatically managed by the hook
-// Tests verify behavior (no warnings), not the ref value directly
-
-// GOTCHA: Version-based coalescing is internal
-// pendingUpdateRef is not exposed
-// Verify coalescing by checking mock call counts, not version values
+// GOTCHA: isUpdatingRef prevents sync loops during popstate
+// When popstate fires, isUpdatingRef.current is checked
+// If true, popstate handler returns early to prevent race conditions
 ```
-
----
 
 ## Implementation Blueprint
 
-### Data Models and Structure
+### Data models and structure
 
-No new data models - using existing test utilities:
+No new data models needed - tests use existing hook interfaces:
 
 ```typescript
-// Existing test utilities (no changes needed)
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+// Hook return type (from useFormStackURLSync.ts)
+interface UseFormStackURLSyncReturn {
+  isRestoring: boolean;
+  getUrlState: () => string[];
+  forceUrlUpdate: () => void;
+}
 
-// Existing mocks (no changes needed)
-let mockPushState: ReturnType<typeof vi.fn>;
-let mockReplaceState: ReturnType<typeof vi.fn>;
-let popstateHandler: ((event: PopStateEvent) => void) | null = null;
+// Helper hook for combined testing (already exists in test file at lines 456-461)
+function useFormStackWithURLSync() {
+  const formStack = useFormStack();
+  const { popToIndex } = useFormStackActions();
+  const urlSync = useFormStackURLSync({ popToIndex });
+  return { ...urlSync, ...formStack, popToIndex };
+}
 ```
 
 ### Implementation Tasks (ordered by dependencies)
 
 ```yaml
-Task 1: ADD new describe block for race condition tests
-  - ADD: describe('race condition protection', () => { ... });
-  - LOCATION: After existing describe blocks (around line 387)
-  - NAMING: Use lowercase for describe text (existing pattern)
-  - STRUCTURE: Multiple nested describe blocks for organization
-  - DEPENDENCIES: None
+Task 1: REVIEW existing test coverage
+  - ANALYZE: src/hooks/__tests__/useFormStackURLSync.test.tsx lines 451-1182
+  - IDENTIFY: Which scenarios from work item are already covered
+  - DETERMINE: If new tests are needed or if existing tests cover requirements
+  - NOTE: Existing tests include rapid form operations, mount/unmount safety, browser navigation, URL state consistency, and stress tests
 
-Task 2: ADD tests for rapid URL updates (RAF coalescing)
-  - ADD: it('should coalesce multiple rapid URL updates into one', () => { ... });
-  - VERIFY: mockPushState called only once for 3+ rapid updates
-  - USE: act() for state changes
-  - USE: waitFor for assertions
-  - LOCATION: Inside "race condition protection" describe
-  - PATTERN: Force multiple updates, verify single history API call
+Task 2: VERIFY test scenarios against work item requirements
+  - CHECK: Are rapid openForm calls (3+ in quick succession) tested? (YES: lines 621-653, 1079-1102)
+  - CHECK: Is "open form → immediate browser back" tested? (YES: lines 749-777)
+  - CHECK: Is "open → open → back → forward" tested? (YES: lines 779-809)
+  - CHECK: Is URL state consistency verified? (YES: lines 910-1064)
+  - CHECK: Is duplicate history entry prevention tested? (YES: lines 981-1013)
+  - DECISION: If all scenarios covered, task is verification. If gaps exist, write new tests.
 
-Task 3: ADD tests for openForm rapid succession
-  - ADD: it('should handle rapid openForm calls correctly', () => { ... });
-  - VERIFY: URL shows all forms in correct order
-  - VERIFY: No duplicate history entries
-  - USE: useFormStack to open forms rapidly
-  - USE: getUrlState() to verify URL state
-  - LOCATION: Inside new "rapid form operations" describe
+Task 3: (OPTIONAL) ADD any missing test cases
+  - ONLY if gaps identified in Task 2
+  - FOLLOW: Existing test structure and patterns
+  - PLACE: In appropriate describe block within useFormStackURLSync.test.tsx
+  - USE: Existing mock setup, wrapper, and helper functions
+  - NAMING: it("should [specific behavior being tested]")
+  - PATTERN: Wrap state changes in act(), use waitFor() for assertions
 
-Task 4: ADD tests for open → immediate back
-  - ADD: it('should handle open form → immediate browser back', () => { ... });
-  - VERIFY: Form closes without race condition
-  - VERIFY: URL updates correctly
-  - USE: popstateHandler to simulate back button
-  - USE: Check for no duplicate history entries
-  - LOCATION: Inside new "browser navigation race conditions" describe
+Task 4: (OPTIONAL) ADD fake timer tests for RAF path
+  - ONLY if testing production RAF coalescing behavior specifically
+  - USE: vi.useFakeTimers() with vi.advanceTimersByTime(16) to advance RAF frames
+  - GOTCHA: Must mock isRAFActuallyAvailable to return true for this to work
+  - PLACE: In new describe("RAF coalescing with fake timers") block
+  - VERIFY: Multiple rapid updates result in single history API call
 
-Task 5: ADD tests for open → open → back → forward
-  - ADD: it('should handle open → open → back → forward sequence', () => { ... });
-  - VERIFY: All forms open, then navigation works correctly
-  - VERIFY: URL state consistent throughout
-  - USE: Multiple form opens, then popstate events
-  - USE: Verify final state matches expected
-  - LOCATION: Inside "browser navigation race conditions" describe
+Task 5: RUN test suite
+  - EXECUTE: npm test -- src/hooks/__tests__/useFormStackURLSync.test.tsx
+  - VERIFY: All tests pass with zero errors
+  - CHECK: No console warnings or errors
+  - CONFIRM: Coverage for race condition scenarios is adequate
 
-Task 6: ADD tests for URL state consistency
-  - ADD: it('should maintain URL state consistency throughout rapid operations', () => { ... });
-  - VERIFY: URL always matches stack state
-  - VERIFY: No orphaned history entries
-  - USE: Mix of open, close, navigation operations
-  - USE: Check URL after each operation
-  - LOCATION: Inside new "URL state consistency" describe
-
-Task 7: ADD tests for mount/unmount safety
-  - ADD: it('should not update state after unmount', () => { ... });
-  - VERIFY: No console warnings on rapid unmount
-  - VERIFY: No memory leaks from pending RAF callbacks
-  - USE: renderHook with unmount
-  - USE: Verify no warnings in console.error
-  - LOCATION: Inside "race condition protection" describe
-
-Task 8: VERIFY all tests pass
-  - RUN: npm test -- src/hooks/__tests__/useFormStackURLSync.test.tsx
-  - VERIFY: All existing tests pass
-  - VERIFY: All new tests pass
-  - CHECK: No TypeScript errors
-  - CHECK: No linting errors
+Task 6: (OPTIONAL) DOCUMENT any findings
+  - IF: Existing tests already cover all scenarios
+  - CREATE: Brief documentation explaining coverage
+  - STORE: In plan/bugfix/P1M2T2S3/research/ directory
+  - EXPLAIN: Which tests cover which scenarios from work item
 ```
 
 ### Implementation Patterns & Key Details
 
 ```typescript
 // ============================================================================
-// CRITICAL TEST PATTERN 1: Rapid URL Updates (RAF Coalescing)
+// EXISTING TEST COVERAGE ANALYSIS
 // ============================================================================
-// Tests that multiple rapid syncStackToUrl calls are coalesced into one
+// The existing test suite (lines 451-1182) already includes:
+//
+// 1. RAF-based coalescing tests (lines 464-539)
+//    - Multiple rapid URL updates coalesced into one
+//    - Version-based update coalescing with 5 rapid updates
+//
+// 2. Mount/unmount safety tests (lines 541-606)
+//    - No state updates after unmount
+//    - Rapid mount/unmount cycles (10 iterations)
+//
+// 3. Rapid form operations tests (lines 609-735)
+//    - Rapid openForm calls (3+ forms)
+//    - Rapid closeForm calls
+//    - Mixed rapid open/close operations
+//
+// 4. Browser navigation race conditions (lines 737-908)
+//    - Open form → immediate browser back
+//    - Open → open → back → forward sequence
+//    - Rapid back/forward button clicks
+//    - Navigation during URL update
+//
+// 5. URL state consistency tests (lines 910-1065)
+//    - Consistency throughout rapid operations
+//    - No duplicate history entries created
+//    - Unique states in history tracking
+//
+// 6. Stress tests (lines 1067-1182)
+//    - 10 rapid form opens
+//    - Rapid open/close cycles
+//    - Interleaved navigation and operations
+//
+// CONCLUSION: All work item scenarios are ALREADY COVERED by existing tests.
+// The primary task is VERIFICATION, not writing new tests.
+// ============================================================================
 
-describe('RAF-based coalescing', () => {
-  it('should coalesce multiple rapid URL updates into one', async () => {
-    const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-    const { openForm, closeForm } = useFormStack();
+// Pattern: Test file structure (from existing tests)
+describe("race condition protection", () => {
+  describe("RAF-based coalescing", () => {
+    // Tests for RAF coalescing behavior
+  });
 
-    // Trigger multiple rapid URL updates
-    act(() => {
-      openForm({ id: 'form-1', component: () => null });
-      openForm({ id: 'form-2', component: () => null });
-      openForm({ id: 'form-3', component: () => null });
-    });
-
-    // Wait for all updates to settle
-    await waitFor(() => {
-      // Should only see ONE pushState call (for form-3), not three
-      expect(mockPushState).toHaveBeenCalledTimes(1);
-      // URL should contain all three forms
-      expect(result.current.getUrlState()).toEqual(['form-1', 'form-2', 'form-3']);
-    });
+  describe("mount/unmount safety", () => {
+    // Tests for isMountedRef pattern
   });
 });
 
-// ============================================================================
-// CRITICAL TEST PATTERN 2: Rapid Form Operations
-// ============================================================================
-// Tests rapid form opening and closing
-
-describe('rapid form operations', () => {
-  it('should handle rapid openForm calls correctly', async () => {
-    const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-    const { openForm } = useFormStack();
-
-    // Rapidly open forms
-    act(() => {
-      openForm({ id: 'org-form', component: () => null });
-      openForm({ id: 'team-form', component: () => null });
-      openForm({ id: 'user-form', component: () => null });
-    });
-
-    await waitFor(() => {
-      // Verify URL contains all forms in order
-      expect(result.current.getUrlState()).toEqual([
-        'org-form',
-        'team-form',
-        'user-form'
-      ]);
-
-      // Verify no duplicate history entries
-      const pushStateCalls = mockPushState.mock.calls.length;
-      const replaceStateCalls = mockReplaceState.mock.calls.length;
-      // Should have: 1 push (for initial) + 2 pushes (for subsequent opens) = 3 total
-      // But with coalescing, should be fewer
-      expect(pushStateCalls).toBeLessThanOrEqual(3);
-      expect(replaceStateCalls).toBe(0); // No replaceState for opening
-    });
-  });
-
-  it('should handle rapid closeForm calls correctly', async () => {
-    const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-    const { openForm, closeForm } = useFormStack();
-
-    // Open forms first
-    act(() => {
-      openForm({ id: 'form-1', component: () => null });
-      openForm({ id: 'form-2', component: () => null });
-      openForm({ id: 'form-3', component: () => null });
-    });
-
-    // Clear mock calls from opening
-    vi.clearAllMocks();
-
-    // Rapidly close forms
-    act(() => {
-      closeForm();
-      closeForm();
-      closeForm();
-    });
-
-    await waitFor(() => {
-      // All forms should be closed
-      expect(result.current.getUrlState()).toEqual([]);
-
-      // Should have used replaceState for closing (or no calls if all closed)
-      // The exact behavior depends on implementation
-    });
-  });
+describe("rapid form operations", () => {
+  // Tests for rapid open/close operations
 });
 
-// ============================================================================
-// CRITICAL TEST PATTERN 3: Browser Navigation Race Conditions
-// ============================================================================
-// Tests navigation during rapid updates
-
-describe('browser navigation race conditions', () => {
-  it('should handle open form → immediate browser back', async () => {
-    const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-    const { openForm, closeForm } = useFormStack();
-
-    // Open a form
-    act(() => {
-      openForm({ id: 'form-1', component: () => null });
-    });
-
-    // Clear mocks
-    vi.clearAllMocks();
-
-    // Simulate immediate browser back
-    act(() => {
-      popstateHandler?.({ state: { forms: [] } } as PopStateEvent);
-    });
-
-    await waitFor(() => {
-      // Form should be closed
-      expect(result.current.getUrlState()).toEqual([]);
-
-      // Should handle navigation cleanly without race condition
-      // No duplicate history entries
-      expect(mockPushState).not.toHaveBeenCalled();
-    });
-  });
-
-  it('should handle open → open → back → forward sequence', async () => {
-    const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-    const { openForm } = useFormStack();
-
-    // Open two forms
-    act(() => {
-      openForm({ id: 'form-1', component: () => null });
-      openForm({ id: 'form-2', component: () => null });
-    });
-
-    await waitFor(() => {
-      expect(result.current.getUrlState()).toEqual(['form-1', 'form-2']);
-    });
-
-    // Clear mocks
-    vi.clearAllMocks();
-
-    // Simulate back (go to form-1)
-    act(() => {
-      popstateHandler?.({ state: { forms: ['form-1'] } } as PopStateEvent);
-    });
-
-    await waitFor(() => {
-      expect(result.current.getUrlState()).toEqual(['form-1']);
-    });
-
-    // Simulate forward (go back to form-2)
-    // Note: Forward navigation requires form registry, may not work in current implementation
-    // This test documents the expected behavior
-  });
+describe("browser navigation race conditions", () => {
+  // Tests for popstate during rapid operations
 });
 
-// ============================================================================
-// CRITICAL TEST PATTERN 4: URL State Consistency
-// ============================================================================
-// Tests that URL always matches stack state
-
-describe('URL state consistency', () => {
-  it('should maintain URL state consistency throughout rapid operations', async () => {
-    const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-    const { openForm, closeForm } = useFormStack();
-
-    // Open form-1
-    act(() => {
-      openForm({ id: 'form-1', component: () => null });
-    });
-
-    await waitFor(() => {
-      expect(result.current.getUrlState()).toEqual(['form-1']);
-    });
-
-    // Open form-2 (rapid succession)
-    act(() => {
-      openForm({ id: 'form-2', component: () => null });
-    });
-
-    await waitFor(() => {
-      expect(result.current.getUrlState()).toEqual(['form-1', 'form-2']);
-    });
-
-    // Open form-3 (rapid succession)
-    act(() => {
-      openForm({ id: 'form-3', component: () => null });
-    });
-
-    await waitFor(() => {
-      expect(result.current.getUrlState()).toEqual(['form-1', 'form-2', 'form-3']);
-    });
-
-    // Close form-3
-    act(() => {
-      closeForm();
-    });
-
-    await waitFor(() => {
-      expect(result.current.getUrlState()).toEqual(['form-1', 'form-2']);
-    });
-
-    // Verify no orphaned history entries
-    // URL should always match stack state
-  });
-
-  it('should verify no duplicate history entries are created', async () => {
-    const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-    const { openForm } = useFormStack();
-
-    const initialPushStateCount = mockPushState.mock.calls.length;
-    const initialReplaceStateCount = mockReplaceState.mock.calls.length;
-
-    // Rapidly open 5 forms
-    act(() => {
-      for (let i = 1; i <= 5; i++) {
-        openForm({ id: `form-${i}`, component: () => null });
-      }
-    });
-
-    await waitFor(() => {
-      expect(result.current.getUrlState()).toHaveLength(5);
-    });
-
-    const finalPushStateCount = mockPushState.mock.calls.length;
-    const finalReplaceStateCount = mockReplaceState.mock.calls.length;
-
-    // With RAF coalescing, should have fewer than 5 calls
-    // Exact count depends on implementation timing
-    const pushStateDelta = finalPushStateCount - initialPushStateCount;
-    expect(pushStateDelta).toBeLessThanOrEqual(5);
-    expect(pushStateDelta).toBeGreaterThan(0);
-
-    // Should use pushState for opening, not replaceState
-    expect(finalReplaceStateCount).toBe(initialReplaceStateCount);
-  });
+describe("URL state consistency", () => {
+  // Tests for URL/stack synchronization consistency
 });
 
-// ============================================================================
-// CRITICAL TEST PATTERN 5: Mount/Unmount Safety
-// ============================================================================
-// Tests that isMountedRef guards work correctly
-
-describe('mount/unmount safety', () => {
-  it('should not update state after unmount', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error');
-
-    const { unmount } = renderHook(() => useFormStackURLSync(), { wrapper });
-    const { openForm } = useFormStack();
-
-    // Open a form (triggers RAF callback)
-    act(() => {
-      openForm({ id: 'form-1', component: () => null });
-    });
-
-    // Unmount immediately (before RAF callback completes)
-    act(() => {
-      unmount();
-    });
-
-    // Wait for any pending RAF callbacks
-    await waitFor(() => {
-      // Should not have any React warnings about updates on unmounted component
-      const errorCalls = consoleErrorSpy.mock.calls.filter(call =>
-        call[0]?.includes?.('unmounted') ||
-        call[0]?.includes?.('setState')
-      );
-      expect(errorCalls).toHaveLength(0);
-    });
-
-    consoleErrorSpy.mockRestore();
-  });
-
-  it('should handle rapid mount/unmount cycles', async () => {
-    const consoleErrorSpy = vi.spyOn(console, 'error');
-
-    // Mount and unmount rapidly
-    for (let i = 0; i < 10; i++) {
-      const { unmount } = renderHook(() => useFormStackURLSync(), { wrapper });
-
-      act(() => {
-        unmount();
-      });
-    }
-
-    await waitFor(() => {
-      // Should not have any warnings
-      const errorCalls = consoleErrorSpy.mock.calls.filter(call =>
-        call[0]?.includes?.('unmounted') ||
-        call[0]?.includes?.('setState') ||
-        call[0]?.includes?.('memory leak')
-      );
-      expect(errorCalls).toHaveLength(0);
-    });
-
-    consoleErrorSpy.mockRestore();
-  });
+// Pattern: Console error suppression (for mount/unmount tests)
+const originalError = console.error;
+beforeEach(() => {
+  console.error = vi.fn();
 });
+afterEach(() => {
+  console.error = originalError;
+});
+
+// Pattern: Mock setup is shared across all tests
+// Lines 26-120 contain the beforeEach hook that sets up:
+// - mockPushState, mockReplaceState
+// - mockAddEventListener, mockRemoveEventListener
+// - popstateHandler capture
+// - window.history and window.location mocks
+
+// Pattern: Using the helper hook for integration testing
+const { result } = renderHook(() => useFormStackWithURLSync(), { wrapper });
+
+// Pattern: State changes wrapped in act()
+act(() => {
+  result.current.openForm({ id: "form-1", component: () => null });
+});
+
+// Pattern: Async assertions with waitFor
+await waitFor(() => {
+  expect(result.current.getUrlState()).toEqual(["form-1"]);
+});
+
+// Pattern: Simulating browser navigation
+popstateHandler?.({ state: { forms: ["form-1"] } } as PopStateEvent);
+
+// Pattern: Tracking mock call counts for verification
+const initialPushStateCount = mockPushState.mock.calls.length;
+// ... perform operations ...
+const finalPushStateCount = mockPushState.mock.calls.length;
+expect(finalPushStateCount - initialPushStateCount).toBeLessThanOrEqual(1);
 ```
 
 ### Integration Points
 
 ```yaml
-TEST_DEPENDENCIES:
-  - import: { renderHook, act, waitFor } from '@testing-library/react'
-    reason: Required for testing React hooks
-    usage: renderHook for setup, act() for state changes, waitFor for async
-
-  - import: { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-    reason: Test framework and utilities
-    usage: Test structure, assertions, mocking
-
-  - import: { FormStackProvider } from '../../components'
-    reason: Required wrapper for hook tests
-    usage: const wrapper = ({ children }) => <FormStackProvider>{children}</FormStackProvider>
-
-  - import: { useFormStackURLSync } from '../useFormStackURLSync'
-    reason: The hook being tested
-    usage: renderHook(() => useFormStackURLSync())
-
-  - import: { useFormStack } from '../useFormStack'
-    reason: Need to trigger form operations
-    usage: const { openForm, closeForm } = useFormStack()
-
-AFFECTED_FILES:
-  - src/hooks/__tests__/useFormStackURLSync.test.tsx
-    reason: TARGET FILE - Add new test suites
-    impact: Extends existing test coverage
+TEST_FILE:
+  - extend: src/hooks/__tests__/useFormStackURLSync.test.tsx
+  - pattern: Add new describe blocks or add tests to existing blocks
+  - preserve: All existing mock setup and helper functions
 
 MOCK_SETUP:
-  - mockPushState, mockReplaceState
-    reason: Already set up in existing tests
-    usage: Verify history API calls
+  - reuse: Existing beforeEach hook (lines 26-120)
+  - provides: mockPushState, mockReplaceState, popstateHandler
+  - critical: Do not modify existing mock setup unless necessary
 
-  - popstateHandler
-    reason: Already captured in addEventListener mock
-    usage: Simulate browser navigation
+HELPER_HOOK:
+  - use: useFormStackWithURLSync (lines 456-461)
+  - combines: useFormStack, useFormStackActions, useFormStackURLSync
+  - available: In the test file, can be used in new tests
 
-CLEANUP:
-  - beforeEach: Reset mocks, clear mock calls
-  - afterEach: Restore original window properties, clear mocks
-  - Pattern: Already established in existing tests
+WRAPPER:
+  - use: Existing wrapper (lines 13-16)
+  - provides: FormStackProvider context
+  - required: For all hook tests
 ```
-
----
 
 ## Validation Loop
 
 ### Level 1: Syntax & Style (Immediate Feedback)
 
 ```bash
-# Run after adding tests - fix before proceeding
-npm run type-check
-# Expected: "No type errors found"
-# If errors: Read TypeScript output and fix type issues
+# Run TypeScript type checking
+npx tsc --noEmit
 
-# Format the file
-npm run format
-# or: npx prettier --write src/hooks/__tests__/useFormStackURLSync.test.tsx
+# Run linter and fix issues
+npm run lint -- --fix
+# or if using eslint directly
+npx eslint src/hooks/__tests__/useFormStackURLSync.test.tsx --fix
 
-# Lint the file
-npm run lint
-# or: npx eslint src/hooks/__tests__/useFormStackURLSync.test.tsx
-
-# Expected: Zero errors. If errors exist, READ output and fix before proceeding.
+# Expected: Zero type errors, zero linting errors
 ```
 
 ### Level 2: Unit Tests (Component Validation)
 
 ```bash
-# Test the specific hook (all tests should pass)
+# Run specific test file
 npm test -- src/hooks/__tests__/useFormStackURLSync.test.tsx
 
-# Run tests in watch mode for rapid feedback
+# Run with coverage
+npm test -- --coverage src/hooks/__tests__/useFormStackURLSync.test.tsx
+
+# Run in watch mode during development
 npm test -- --watch src/hooks/__tests__/useFormStackURLSync.test.tsx
 
-# Full test suite for hooks
-npm test -- src/hooks/__tests__/
-
-# Coverage validation
-npm run test:coverage
-# Check that useFormStackURLSync coverage increased for race condition paths
-
-# Expected: All tests pass. If failing, debug root cause and fix tests.
-# Common issues:
-#   - Missing act() wrapper around state changes
-#   - Not using waitFor for async assertions
-#   - Mock setup incorrect
-#   - Test expectations don't match implementation behavior
+# Expected: All tests pass. If failing, READ output and fix before proceeding.
+# Verify specifically that race condition tests (lines 451-1182) all pass.
 ```
 
 ### Level 3: Integration Testing (System Validation)
 
 ```bash
-# Start example app to test in browser
-cd examples
-npm install
-npm run dev
+# Run full test suite to ensure no regressions
+npm test
 
-# Manual testing checklist:
-# 1. Open example app in browser
-# 2. Open DevTools Console
-# 3. Rapidly open 3+ forms
-# 4. Verify URL shows all forms
-# 5. Rapidly click back button
-# 6. Verify forms close correctly
-# 7. Check for no console warnings
-# 8. Verify bookmark/sharing works correctly
+# Run all hook tests together
+npm test -- src/hooks/__tests__/
 
-# Expected: All manual tests pass, URL matches form state at all times
+# Verify test output is clean (no console errors or warnings)
+# Expected: All tests pass, zero console errors, clean test output
+
+# Specific test scenarios to verify:
+npm test -- -t "should coalesce multiple rapid URL updates"
+npm test -- -t "should handle rapid openForm calls"
+npm test -- -t "should handle open form → immediate browser back"
+npm test -- -t "should handle open → open → back → forward sequence"
+npm test -- -t "should maintain consistency throughout rapid operations"
+npm test -- -t "should verify no duplicate history entries are created"
+npm test -- -t "should not update state after unmount"
 ```
 
-### Level 4: Race Condition Validation
+### Level 4: Creative & Domain-Specific Validation
 
 ```bash
-# CRITICAL: Test the specific race condition scenarios
+# Manual verification of test coverage
+# Check if all work item scenarios are covered:
 
-# Scenario 1: Monitor history API calls
-# 1. Open browser DevTools Console
-# 2. Run:
-let pushStateCount = 0;
-let replaceStateCount = 0;
-const originalPushState = history.pushState;
-const originalReplaceState = history.replaceState;
-history.pushState = function(...args) {
-  pushStateCount++;
-  console.log('pushState #' + pushStateCount, args);
-  return originalPushState.apply(this, args);
-};
-history.replaceState = function(...args) {
-  replaceStateCount++;
-  console.log('replaceState #' + replaceStateCount, args);
-  return originalReplaceState.apply(this, args);
-};
-# 3. Rapidly open 3 forms
-# 4. Should see minimal history API calls (coalesced)
-# 5. URL should show all 3 forms
+# 1. Rapid openForm calls (3+ in quick succession)
+npm test -- -t "rapid openForm"
 
-# Scenario 2: Stress test
-# 1. Open 10 forms in rapid succession
-# 2. Verify URL shows all 10 forms
-# 3. Rapidly click back 5 times
-# 4. Verify 5 forms close
-# 5. Verify URL is correct
+# 2. Open form → immediate browser back
+npm test -- -t "open form → immediate browser back"
 
-# Expected: Race conditions are handled gracefully, URL always consistent
+# 3. Open → open → back → forward sequence
+npm test -- -t "open → open → back → forward"
+
+# 4. URL state consistency
+npm test -- -t "URL state consistency"
+
+# 5. No duplicate history entries
+npm test -- -t "duplicate history"
+
+# Mount/unmount safety verification
+npm test -- -t "mount/unmount"
+
+# Stress tests for robustness
+npm test -- -t "stress tests"
+
+# Coverage report (if coverage tools are available)
+npm test -- --coverage --reporter=html
+# Open coverage/index.html to verify race condition code is covered
 ```
-
----
 
 ## Final Validation Checklist
 
 ### Technical Validation
 
-- [ ] Type checking passes: `npm run type-check`
 - [ ] All tests pass: `npm test -- src/hooks/__tests__/useFormStackURLSync.test.tsx`
-- [ ] No formatting issues: `npm run format`
+- [ ] No console errors or warnings during test execution
+- [ ] TypeScript compilation succeeds: `npx tsc --noEmit`
 - [ ] No linting errors: `npm run lint`
-- [ ] Coverage increased for race condition code paths
-- [ ] Manual browser testing successful
+- [ ] Test coverage shows race condition protection code is exercised
 
 ### Feature Validation
 
-- [ ] "race condition protection" test suite added
-- [ ] "rapid form operations" test suite added
-- [ ] "browser navigation race conditions" test suite added
-- [ ] "URL state consistency" test suite added
-- [ ] Tests verify RAF coalescing prevents duplicate updates
-- [ ] Tests verify isMountedRef guards prevent warnings
-- [ ] Tests verify URL state matches stack state
-- [ ] Tests verify no duplicate history entries
-- [ ] All existing tests still pass
-- [ ] No regressions in existing functionality
+- [ ] Rapid openForm calls (3+ in quick succession) test passes
+- [ ] Open form → immediate browser back test passes
+- [ ] Open → open → back → forward sequence test passes
+- [ ] URL state consistency is verified throughout operations
+- [ ] No duplicate history entries test passes
+- [ ] Mount/unmount safety tests pass (no React warnings)
+- [ ] All success criteria from work item are met
 
 ### Code Quality Validation
 
-- [ ] Follows existing test patterns (describe, it, expect)
-- [ ] Uses act() for all state changes
-- [ ] Uses waitFor for async assertions
-- [ ] Proper setup/teardown in beforeEach/afterEach
-- [ ] Test names are descriptive and clear
+- [ ] Tests follow existing patterns in the test file
+- [ ] State changes are properly wrapped in act()
+- [ ] Console.error is suppressed for expected error cases
+- [ ] Test names clearly describe what behavior is being tested
 - [ ] Tests are independent (no shared state between tests)
-- [ ] Mock cleanup is proper
-- [ ] Error suppression used where appropriate
-- [ ] Comments explain complex test scenarios
 
-### Documentation Validation
+### Documentation & Deployment
 
-- [ ] Test suites are well-organized with clear describe blocks
-- [ ] Complex test scenarios have explanatory comments
-- [ ] Test assertions are self-documenting
-- [ ] Edge cases are covered with tests
+- [ ] If new tests were added, they are properly documented with comments
+- [ ] If existing tests already cover scenarios, note this in completion
+- [ ] Test output is clean and readable
 
 ---
 
 ## Anti-Patterns to Avoid
 
-- ❌ **Don't use setTimeout in tests** - Use waitFor or fake timers instead
-- ❌ **Don't forget act() wrapper** - All state changes must be in act()
-- ❌ **Don't test implementation details** - Test behavior, not ref values
-- ❌ **Don't use shared state between tests** - Each test should be independent
-- ❌ **Don't skip cleanup** - Always clear mocks in afterEach
-- ❌ **Don't use real timers** - Use fake timers if testing timing behavior
-- ❌ **Don't assume async order** - Use waitFor for race conditions
-- ❌ **Don't ignore console warnings** - Suppress and verify them
-- ❌ **Don't test unrelated functionality** - Focus on race conditions
-- ❌ **Don't make tests brittle** - Tests should work with implementation changes
+- ❌ Don't modify the existing mock setup unless absolutely necessary
+- ❌ Don't write tests that depend on execution order or timing
+- ❌ Don't use real timers - rely on the test environment's synchronous execution
+- ❌ Don't forget to wrap state changes in act()
+- ❌ Don't forget to restore console.error after suppressing it
+- ❌ Don't write duplicate tests - check what's already covered first
+- ❌ Don't use setTimeout/async delays for synchronization - use waitFor()
+- ❌ Don't test implementation details (like ref values) - test behavior
+- ❌ Don't create new test files - extend the existing one
+- ❌ Don't ignore failing tests - fix them before marking task complete
 
 ---
 
-## Appendix: Test Scenarios from Contract Definition
+## Additional Notes
 
-The following test scenarios are specified in the work item contract:
+### Existing Test Coverage Summary
 
-### 1. Rapid openForm calls (3+ in quick succession)
+The existing test suite in `useFormStackURLSync.test.tsx` (lines 451-1182) already provides comprehensive coverage of all scenarios specified in the work item:
 
-```typescript
-it('should handle rapid openForm calls (3+ in quick succession)', async () => {
-  const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-  const { openForm } = useFormStack();
+1. **Rapid openForm calls (3+ in quick succession)**: Lines 621-653, 1079-1102
+2. **Open form → immediate browser back**: Lines 749-777
+3. **Open → open → back → forward sequence**: Lines 779-809
+4. **URL state consistency**: Lines 910-1065
+5. **No duplicate history entries**: Lines 981-1013
+6. **Mount/unmount safety**: Lines 541-606
 
-  act(() => {
-    openForm({ id: 'form-1', component: () => null });
-    openForm({ id: 'form-2', component: () => null });
-    openForm({ id: 'form-3', component: () => null });
-  });
+### Task Completion Criteria
 
-  await waitFor(() => {
-    expect(result.current.getUrlState()).toEqual(['form-1', 'form-2', 'form-3']);
-  });
-});
-```
+This task (P1.M2.T2.S3) can be considered complete if:
+1. All existing tests pass successfully
+2. Verification confirms all work item scenarios are covered
+3. Test output is clean with zero console errors
 
-### 2. Open form → immediate browser back
-
-```typescript
-it('should handle open form → immediate browser back', async () => {
-  const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-  const { openForm } = useFormStack();
-
-  act(() => {
-    openForm({ id: 'form-1', component: () => null });
-  });
-
-  act(() => {
-    popstateHandler?.({ state: { forms: [] } } as PopStateEvent);
-  });
-
-  await waitFor(() => {
-    expect(result.current.getUrlState()).toEqual([]);
-  });
-});
-```
-
-### 3. Open → open → back → forward sequence
-
-```typescript
-it('should handle open → open → back → forward sequence', async () => {
-  const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-  const { openForm } = useFormStack();
-
-  act(() => {
-    openForm({ id: 'form-1', component: () => null });
-    openForm({ id: 'form-2', component: () => null });
-  });
-
-  await waitFor(() => {
-    expect(result.current.getUrlState()).toEqual(['form-1', 'form-2']);
-  });
-
-  act(() => {
-    popstateHandler?.({ state: { forms: ['form-1'] } } as PopStateEvent);
-  });
-
-  await waitFor(() => {
-    expect(result.current.getUrlState()).toEqual(['form-1']);
-  });
-});
-```
-
-### 4. Verify URL state remains consistent
-
-```typescript
-it('should maintain URL state consistency throughout operations', async () => {
-  const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-  const { openForm, closeForm } = useFormStack();
-
-  // Open
-  act(() => { openForm({ id: 'f1', component: () => null }); });
-  await waitFor(() => { expect(result.current.getUrlState()).toEqual(['f1']); });
-
-  // Open again
-  act(() => { openForm({ id: 'f2', component: () => null }); });
-  await waitFor(() => { expect(result.current.getUrlState()).toEqual(['f1', 'f2']); });
-
-  // Close
-  act(() => { closeForm(); });
-  await waitFor(() => { expect(result.current.getUrlState()).toEqual(['f1']); });
-});
-```
-
-### 5. Verify no history entries are duplicated
-
-```typescript
-it('should not create duplicate history entries', async () => {
-  const { result } = renderHook(() => useFormStackURLSync(), { wrapper });
-  const { openForm } = useFormStack();
-
-  vi.clearAllMocks();
-
-  act(() => {
-    openForm({ id: 'f1', component: () => null });
-    openForm({ id: 'f2', component: () => null });
-    openForm({ id: 'f3', component: () => null });
-  });
-
-  await waitFor(() => {
-    expect(result.current.getUrlState()).toEqual(['f1', 'f2', 'f3']);
-  });
-
-  // Should have minimal pushState calls (coalesced)
-  expect(mockPushState.mock.calls.length).toBeLessThanOrEqual(3);
-});
-```
-
----
-
-## References Summary
-
-### Internal Research
-- `/plan/bugfix/P1M2T2S3/research/rtl_race_condition_patterns.md` - RTL patterns for race conditions
-- `/plan/bugfix/P1M2T2S3/research/vitest_fake_timers.md` - Vitest fake timers research
-- `/plan/bugfix/P1M2T2S3/research/vitest_fake_timer_examples.ts` - Executable code examples
-- `/plan/bugfix/P1M2T2S3/research/README.md` - Research summary
-
-### Previous PRPs
-- `/plan/docs/bugfix/P1M2T2S1/PRP.md` - useRef-based pending update tracking
-- `/plan/docs/bugfix/P1M2T2S2/PRP.md` - isMountedRef pattern for unmount safety
-
-### Code Files
-- `src/hooks/useFormStackURLSync.ts` - Implementation under test
-- `src/hooks/__tests__/useFormStackURLSync.test.tsx` - Target file for adding tests
-
-### External Documentation
-- https://vitest.dev/api/mock-functions.html - Mock functions and fake timers
-- https://testing-library.com/docs/react-testing-library/api - RTL API reference
-
----
-
-**PRP Version**: 1.0
-**Last Updated**: 2026-01-11
-**Status**: READY FOR IMPLEMENTATION
-**Next Task**: P1.M3.T1.S1 (Fix popToIndex Silent Failure)
+If gaps are identified during verification, add the necessary test cases following the existing patterns in the file.
