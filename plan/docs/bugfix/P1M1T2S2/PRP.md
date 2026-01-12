@@ -1,502 +1,448 @@
-name: "PRP: Verify All Test Suites Produce Clean Output (P1.M1.T2.S2)"
-description: |
-
----
+# PRP: Verify All Test Suites Produce Clean Output
 
 ## Goal
 
-**Feature Goal**: Validate that the entire test suite produces clean output with no error artifacts after applying console.error suppression to useFormStack and useFormStackURLSync tests.
+**Feature Goal**: Validate that the full test suite runs cleanly with zero error artifacts after error suppression improvements from P1.M1.T1.S2 and P1.M1.T2.S1
 
-**Deliverable**: Confirmation document at `plan/bugfix/architecture/test_validation.md` verifying that all tests pass with clean output.
+**Deliverable**: Validation report at `plan/bugfix/architecture/test_validation.md` confirming clean test output
 
 **Success Definition**:
-- All 249 tests across 21 test files pass successfully
-- No "uncaught error" or "Uncaught" messages in stderr output
-- Only expected test output appears (PASS/FAIL summaries, no console.error spam)
-- Visual or automated inspection confirms clean test run
+- All 260 tests across 23 test files pass
+- Zero "uncaught error" or "Uncaught" messages in stderr output
+- Only expected test output appears (no console.error artifacts from expected error tests)
 
 ## User Persona
 
-**Target User**: Developer/QA ensuring code quality and CI/CD pipeline integrity
+**Target User**: Developer maintaining the test suite and running tests in CI/CD pipelines
 
-**Use Case**: Validate that test output modifications from previous subtasks (P1.M1.T1.S2, P1.M1.T2.S1) successfully eliminate console.error noise without breaking tests
+**Use Case**: Running `npm test` should produce clean output without expected error messages cluttering the logs, making it easy to spot real issues
 
-**User Journey**:
-1. Run full test suite with `npm test`
-2. Inspect output for error artifacts
-3. Confirm clean output with validation script
-4. Document results for team visibility
+**User Journey**: Developer runs `npm test` → Tests execute → Clean output shows only test results, not expected error artifacts
 
-**Pain Points Addressed**:
-- Noisy test output obscuring real failures
-- False positives from expected errors in error boundary tests
-- CI/CD pipelines cluttered with console.error spam
+**Pain Points Addressed**: Expected error messages from hook validation tests were cluttering test output, making it harder to spot real issues
 
 ## Why
 
-- **Test Quality**: Clean output ensures real test failures are immediately visible
-- **CI/CD Integrity**: Automated validation prevents regression of test output artifacts
-- **Developer Experience**: Clear test results improve debugging velocity
-- **Codebase Hygiene**: Maintains standard for all future test additions
+- **Developer Experience**: Clean test output improves debugging by eliminating noise from expected errors
+- **CI/CD Clarity**: Automated test runs produce readable logs for failure triage
+- **Validation Completeness**: Confirms that previous subtasks (P1.M1.T1.S2, P1.M1.T2.S1) successfully suppressed error output
+- **Best Practice**: Following testing strategy principle: "Error boundary tests should verify fallback UI appears, not that errors are thrown"
 
 ## What
 
-Run the full test suite and validate clean output after console.error suppression was applied to:
-- `src/hooks/__tests__/useFormStack.test.tsx` (modified in P1.M1.T1.S2)
-- `src/hooks/__tests__/useFormStackURLSync.test.tsx` (modified in P1.M1.T2.S1)
+Validate that the full test suite produces clean output after applying console.error suppression to tests that intentionally trigger errors. This is a verification task to confirm the work from previous subtasks.
 
 ### Success Criteria
 
-- [ ] All 249 tests pass (verified by exit code 0)
-- [ ] No "uncaught error" messages in output
-- [ ] No "Uncaught" messages in output
-- [ ] No unexpected console.error messages
-- [ ] Validation document created at `plan/bugfix/architecture/test_validation.md`
+- [ ] All 260 tests pass when running `npm test`
+- [ ] Zero "uncaught error" or "Uncaught" messages in stderr
+- [ ] Zero console.error artifacts from useFormStack and useFormStackURLSync tests
+- [ ] Validation report created at `plan/bugfix/architecture/test_validation.md`
 
 ## All Needed Context
 
 ### Context Completeness Check
 
-_Before executing this PRP, validate: "If someone knew nothing about this codebase, would they have everything needed to implement this successfully?"_
+_Validate: "If someone knew nothing about this codebase, would they have everything needed to implement this successfully?"_
 
-Yes - this PRP provides complete context on test structure, validation commands, and expected outcomes.
+**YES** - This PRP includes: exact test command, expected test count, validation patterns, grep commands, file locations, and success criteria.
 
 ### Documentation & References
 
 ```yaml
-# MUST READ - Include these in your context window
-- url: https://vitest.dev/guide/cli
-  why: Vitest CLI options for running tests and capturing output
-  critical: Use `vitest run --silent` for cleaner output, `--reporter=verbose` for detailed output
-
-- url: https://vitest.dev/guide/mocking
-  why: Understanding vi.fn() and vi.spyOn() patterns used for console.error suppression
-  critical: The beforeEach/afterEach restoration pattern is critical for test isolation
-
-- url: https://stackoverflow.com/questions/44467657/better-way-to-disable-console-inside-unit-tests
-  why: Community patterns for console suppression in tests
-  critical: Alternative patterns using vi.spyOn() vs direct replacement
-
+# MODIFIED TEST FILES - Previously Modified in P1.M1.T1.S2 and P1.M1.T2.S1
 - file: src/hooks/__tests__/useFormStack.test.tsx
-  why: Modified test file with console.error suppression pattern (lines 61-70)
-  pattern: beforeEach/afterEach with console.error = vi.fn()
-  gotcha: Import must include `vi, beforeEach, afterEach` from vitest
+  why: Contains error suppression pattern applied in P1.M1.T1.S2
+  pattern: Lines 60-70 - console.error suppression with beforeEach/afterEach
+  section: describe('when used outside FormStackProvider') block
+  gotcha: Suppression is scoped to the describe block, not globally
 
 - file: src/hooks/__tests__/useFormStackURLSync.test.tsx
-  why: Modified test file with console.error suppression pattern (lines 309-319)
-  pattern: Identical suppression pattern for error handling tests
-  gotcha: Scope suppression only to describe blocks that throw errors
+  why: Contains error suppression pattern applied in P1.M1.T2.S1
+  pattern: Lines 373-390 - console.error suppression with beforeEach/afterEach
+  section: describe('error handling') block
+  gotcha: Suppression is scoped to the describe block, not globally
+
+# SIMILAR PATTERNS - Other Test Files with Suppression
+- file: src/components/__tests__/FormErrorBoundary.test.tsx
+  why: Another example of the same suppression pattern
+  pattern: Lines 22-31 - describe block level suppression
+  gotcha: Same pattern used across multiple test files
+
+- file: src/components/__tests__/FormStackRenderer.test.tsx
+  why: Additional example of suppression in error boundary tests
+  pattern: Lines 217-226 - describe block level suppression
+  gotcha: Shows pattern applied to integration-style tests
+
+# TEST CONFIGURATION
+- file: vitest.setup.ts
+  why: Global test setup file - uses vi.clearAllMocks() not vi.restoreAllMocks()
+  gotcha: Setup file clears mocks but doesn't restore implementations
 
 - file: vitest.config.ts
-  why: Test runner configuration
-  pattern: jsdom environment, setupFiles, restoreMocks option
-  gotcha: enable `restoreMocks: true` for automatic cleanup
-
-- file: vitest.setup.ts
-  why: Global test setup for cleanup and mock clearing
-  pattern: afterEach cleanup() and vi.clearAllMocks()
-  gotcha: Order matters - cleanup before mock clearing
+  why: Vitest configuration with restoreMocks not enabled
+  gotcha: restoreMocks: false means manual restoration is required
 
 - file: package.json
-  why: Available test scripts
-  pattern: "test": "vitest run", "test:watch": "vitest"
-  gotcha: Use `npm test` for single run, `npm run test:watch` for development
+  why: Test scripts and configuration
+  pattern: "test": "vitest run" - runs tests once (not watch mode)
 
-- docfile: plan/architecture/system_context.md
-  why: Overall project context and testing strategy
-  section: Testing Strategy (lines 87-91)
+# EXTERNAL RESEARCH - Vitest Output Patterns
+- url: https://vitest.dev/guide/cli.html#filters
+  why: Understanding Vitest CLI output filtering
+  critical: stderr vs stdout separation in Vitest
 
-- file: bug_fix_tasks.json
-  why: Task context for P1.M1.T2.S2 and related subtasks
-  pattern: Task hierarchy and completion status
-  gotcha: Understanding dependency chain (P1.M1.T1.S2 → P1.M1.T2.S1 → P1.M1.T2.S2)
+- url: https://vitest.dev/guide/reporters.html
+  why: Test reporter configuration options
+  critical: How to interpret test output format
+
+# REFERENCE PRPs - Previous Subtasks
+- file: plan/docs/bugfix/P1M1T2S1_PRP.md
+  why: PRP for P1.M1.T2.S1 error suppression implementation
+  pattern: Contains detailed explanation of error suppression approach
+  gotcha: This task validates that the PRP implementation was successful
 ```
 
-### Current Codebase Tree (test structure)
+### Current Codebase Tree
 
 ```bash
-src/
-├── __tests__/
-│   └── integration/
-│       └── test-utils.tsx              # Test fixtures and utilities
-├── components/
-│   └── __tests__/
-│       ├── FormErrorBoundary.test.tsx  # Has console.error suppression
-│       └── FormStackRenderer.test.tsx  # Has console.error suppression
-├── context/
-│   └── __tests__/
-│       ├── FormStackContext.test.tsx
-│       └── FormStateContext.test.tsx
-├── hooks/
-│   └── __tests__/
-│       ├── useFormStack.test.tsx       # MODIFIED: Added suppression (P1.M1.T1.S2)
-│       ├── useFormStackURLSync.test.tsx # MODIFIED: Added suppression (P1.M1.T2.S1)
-│       └── useFormStackState.test.tsx
-├── types/
-│   └── __tests__/
-│       └── types.test.ts
-└── utils/
-    └── __tests__/
-        └── form-types.test.ts
+geoform/
+├── src/
+│   ├── hooks/
+│   │   ├── __tests__/
+│   │   │   ├── useFormStack.test.tsx          # Modified in P1.M1.T1.S2 (has suppression)
+│   │   │   ├── useFormStackURLSync.test.tsx   # Modified in P1.M1.T2.S1 (has suppression)
+│   │   │   ├── useFormStackState.test.tsx
+│   │   │   └── useFormStackActions.test.tsx
+│   └── components/
+│       └── __tests__/
+│           ├── FormErrorBoundary.test.tsx     # Has suppression
+│           └── FormStackRenderer.test.tsx     # Has suppression
+├── vitest.setup.ts                             # Global test setup
+├── vitest.config.ts                            # Vitest configuration
+├── package.json
+└── plan/
+    ├── architecture/
+    │   └── test_validation.md                 # OUTPUT LOCATION - Create this
+    └── bugfix/
+        └── P1M1T2S2/
+            └── PRP.md                          # This file
 ```
 
-**Test Statistics:**
-- Total tests: **249** (not 220 as originally noted)
-- Test files: **21**
-- Test runner: **Vitest** with jsdom environment
-
-### Desired Codebase Tree (output validation)
+### Desired Codebase Tree
 
 ```bash
-plan/
-├── bugfix/
-│   ├── P1M1T2S2/
-│   │   └── PRP.md                      # This file
-│   └── architecture/
-│       └── test_validation.md          # OUTPUT: Test validation results
+# No new files - validation and documentation only
+# plan/bugfix/architecture/test_validation.md will be created with validation results
 ```
 
 ### Known Gotchas of Our Codebase & Library Quirks
 
-```typescript
-// CRITICAL: Vitest requires explicit import of vi, beforeEach, afterEach
-// Missing imports cause "ReferenceError: vi is not defined"
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+```bash
+# CRITICAL: Actual test count is 260, not 220 as stated in original system_context.md
+# The system_context.md file may have outdated information - use actual count from test run
 
-// CRITICAL: console.error must be restored in afterEach
-// Without restoration, console.error remains mocked for subsequent tests
-afterEach(() => {
-  console.error = originalError;
-});
+# CRITICAL: "An update to FormStackProvider inside a test was not wrapped in act(...)"
+# warnings are NOT the target of this validation - these are React development warnings
+# The task specifically looks for "uncaught error" or "Uncaught" messages
 
-// GOTCHA: React 19 uses console.error for validation errors
-// React 18-19 automatic error logging cannot be disabled globally
-// Must be suppressed per-test with the pattern shown above
+# CRITICAL: Use grep -i for case-insensitive matching when searching for errors
+# Vitest output may use "Uncaught" or "uncaught" interchangeably
 
-// GOTCHA: vitest.run --silent still outputs console.error
-// Use grep/awk filtering for validation, don't rely on --silent flag alone
+# CRITICAL: Vitest separates stdout (test results) from stderr (errors/warnings)
+# Use 2>&1 to capture both streams when validating output
 
-// GOTCHA: 249 tests, not 220 as mentioned in some docs
-// System context doc may have outdated count
+# CRITICAL: The project uses Vitest, not Jest
+# npm test runs "vitest run" which exits after completion (not watch mode)
+
+# CRITICAL: console.error suppression is scoped to describe blocks
+# Global suppression is NOT used - only tests that throw expected errors have suppression
 ```
 
 ## Implementation Blueprint
 
 ### Data Models and Structure
 
-No new data models - this is a validation task.
-
-The expected output structure is:
-
-```typescript
-// Test validation result structure
-interface TestValidationResult {
-  timestamp: string;
-  totalTests: number;
-  passedTests: number;
-  failedTests: number;
-  hasUncaughtErrors: boolean;
-  hasConsoleErrors: boolean;
-  outputSummary: string;
-  validationStatus: "PASS" | "FAIL";
-}
-```
+No data models - this is a validation and documentation task only.
 
 ### Implementation Tasks (ordered by dependencies)
 
 ```yaml
 Task 1: RUN FULL TEST SUITE
-  - EXECUTE: npm test (or vitest run)
-  - CAPTURE: stdout and stderr to file
-  - COMMAND: npm test 2>&1 | tee test-output.log
-  - TIMEOUT: 120 seconds (tests should complete within 2 minutes)
+  - COMMAND: npm test
+  - CAPTURE: Full output to a file or variable for analysis
+  - VERIFY: All tests pass (expected: 260 tests)
+  - DEPENDENCIES: None
 
-Task 2: VALIDATE TEST PASS/FAIL STATUS
-  - CHECK: Exit code is 0 (all tests passed)
-  - VERIFY: Test count shows 249 tests (or current count)
-  - COMMAND: echo $? (check exit code after npm test)
-  - EXPECTED: "Test Files  21 passed (21)"
+Task 2: CHECK FOR UNCAUGHT ERRORS
+  - COMMAND: npm test 2>&1 | grep -i "uncaught" || echo "No uncaught errors found"
+  - VERIFY: Zero "uncaught error" or "Uncaught" messages in output
+  - DEPENDENCIES: Task 1
 
-Task 3: CHECK FOR UNCAUGHT ERROR MESSAGES
-  - SEARCH: Output for "uncaught error" (case insensitive)
-  - SEARCH: Output for "Uncaught" (capital U, as React logs it)
-  - COMMAND: grep -i "uncaught error" test-output.log || echo "No uncaught errors found"
-  - EXPECTED: No matches found
+Task 3: CHECK FOR CONSOLE.ERROR ARTIFACTS
+  - COMMAND: npm test 2>&1 | grep "console.error" | grep -E "(useFormStack|useFormStackURLSync)" || echo "No console.error artifacts from target tests"
+  - VERIFY: Zero console.error artifacts from modified test files
+  - DEPENDENCIES: Task 1
 
-Task 4: CHECK FOR CONSOLE.ERROR MESSAGES
-  - SEARCH: Output for console.error calls
-  - FILTER: Exclude expected patterns from error boundary tests
-  - COMMAND: grep "console.error" test-output.log | grep -v "expected" || echo "No console.errors found"
-  - EXPECTED: No unexpected console.error messages
+Task 4: VERIFY SPECIFIC TEST FILES HAVE SUPPRESSION
+  - CHECK: src/hooks/__tests__/useFormStack.test.tsx lines 60-70
+  - CHECK: src/hooks/__tests__/useFormStackURLSync.test.tsx lines 373-390
+  - VERIFY: Both have console.error suppression pattern with beforeEach/afterEach
+  - DEPENDENCIES: None
 
-Task 5: CREATE VALIDATION DOCUMENT
+Task 5: DOCUMENT VALIDATION RESULTS
   - CREATE: plan/bugfix/architecture/test_validation.md
-  - CONTENT: Test run results, error counts, validation status
-  - INCLUDE: Timestamp, test counts, grep command results
-  - FORMAT: Markdown with clear sections
+  - CONTENTS: Test results, counts, clean output confirmation, timestamp
+  - FORMAT: Markdown with clear sections for results
+  - DEPENDENCIES: Tasks 1, 2, 3, 4
 
-Task 6: CLEANUP (optional)
-  - REMOVE: test-output.log temporary file
-  - PRESERVE: test_validation.md as permanent record
-  - COMMAND: rm test-output.log (after validation document created)
+Task 6: REGRESSION VERIFICATION
+  - RUN: npm test -- --reporter=verbose (optional, for detailed output)
+  - VERIFY: No unexpected failures or new warnings
+  - DEPENDENCIES: Task 5
 ```
 
 ### Implementation Patterns & Key Details
 
 ```bash
-# Pattern: Run tests and capture output for validation
-npm test 2>&1 | tee test-output.log
+# EXACT COMMANDS FOR VALIDATION:
 
-# Pattern: Check exit code immediately after test run
-npm test
-TEST_EXIT_CODE=$?
-if [ $TEST_EXIT_CODE -eq 0 ]; then
-  echo "✅ All tests passed"
-else
-  echo "❌ Tests failed with exit code $TEST_EXIT_CODE"
-fi
+# 1. Run full test suite and capture summary
+npm test 2>&1 | tee /tmp/test_output.txt
 
-# Pattern: Grep for specific error patterns
-# Case insensitive search for "uncaught error"
-grep -i "uncaught error" test-output.log
+# Expected output summary:
+# Test Files  23 passed (23)
+# Tests  260 passed (260)
+# Duration  ~2s
 
-# Case sensitive search for "Uncaught" (React logs capital U)
-grep "Uncaught" test-output.log
+# 2. Check for uncaught errors (case-insensitive)
+npm test 2>&1 | grep -i "uncaught" | wc -l
+# Expected: 0
 
-# Pattern: Count test results
-grep -E "Test Files.*passed" test-output.log
+# 3. Check for console.error artifacts from specific test files
+npm test 2>&1 | grep "console.error" | grep -E "(useFormStack|useFormStackURLSync)" | wc -l
+# Expected: 0
 
-# Pattern: Negative grep (pass if NOT found)
-# Returns exit code 1 if found (error), 0 if not found (clean)
-! grep -i "uncaught error" test-output.log
+# 4. Verify error suppression pattern is present in files
+grep -A 10 "when used outside FormStackProvider" src/hooks/__tests__/useFormStack.test.tsx | grep -q "console.error = vi.fn()"
+# Expected: Exit code 0 (pattern found)
 
-# Pattern: Comprehensive validation script
-npm test 2>&1 | tee test-output.log
-if grep -qi "uncaught error" test-output.log; then
-  echo "❌ FAILED: Uncaught errors detected"
-  exit 1
-fi
-if grep "Uncaught" test-output.log; then
-  echo "❌ FAILED: Uncaught errors detected"
-  exit 1
-fi
-echo "✅ PASSED: Clean test output validated"
+grep -A 10 "error handling" src/hooks/__tests__/useFormStackURLSync.test.tsx | grep -q "console.error = vi.fn()"
+# Expected: Exit code 0 (pattern found)
+
+# 5. Get actual test count (in case it differs from docs)
+npm test 2>&1 | grep "Tests.*passed"
+# Expected: "Tests  XXX passed (XXX)" where XXX is actual count
 ```
 
 ### Integration Points
 
 ```yaml
-NO_CODE_CHANGES:
-  - This task validates previous work
-  - No integration points to modify
-  - Purely verification and documentation
+TEST_OUTPUT:
+  - location: plan/bugfix/architecture/test_validation.md
+  - format: Markdown validation report
+  - contents: Test count, pass/fail status, clean output confirmation
 
-DOCUMENTATION:
-  - output: plan/bugfix/architecture/test_validation.md
-  - format: Markdown with test results
-  - includes: Timestamp, counts, validation status
+PREVIOUS_SUBTASKS:
+  - P1.M1.T1.S2: Added suppression to useFormStack.test.tsx
+  - P1.M1.T2.S1: Added suppression to useFormStackURLSync.test.tsx
+  - relationship: This task validates the success of those implementations
 
-CI_CD:
-  - can be integrated into GitHub Actions
-  - pattern: Add test output validation step
-  - exit code 0 means clean output
+TEST_FRAMEWORK:
+  - tool: Vitest (not Jest)
+  - command: npm test runs "vitest run"
+  - config: vitest.config.ts with jsdom environment
 ```
 
 ## Validation Loop
 
-### Level 1: Test Execution (Immediate Feedback)
+### Level 1: Syntax & Style (Immediate Feedback)
 
 ```bash
-# Run the full test suite
+# No code changes - validation only
+# Skip to Level 2
+```
+
+### Level 2: Unit Tests (Component Validation)
+
+```bash
+# Run full test suite
 npm test
 
-# Expected output should show:
-# ✓ src/components/__tests__/FormErrorBoundary.test.tsx (N)
-# ✓ src/components/__tests__/FormStackRenderer.test.tsx (N)
-# ✓ src/hooks/__tests__/useFormStack.test.tsx (N)
-# ✓ src/hooks/__tests__/useFormStackURLSync.test.tsx (N)
-# ... all other tests
-#
-# Test Files  21 passed (21)
-#     Tests | 249 passed (249)
-#  Start at 00:00:00
-#  Duration 2.45s (transform 234ms, setup 0ms, collect 89ms, tests 2.13s)
+# Expected output:
+# Test Files  23 passed (23)
+# Tests  260 passed (260)
+# Duration  ~2s
+
+# If tests fail, investigate and fix before proceeding
+# Expected: Zero test failures
 ```
 
-### Level 2: Error Artifact Detection (Output Validation)
+### Level 3: Integration Testing (System Validation)
 
 ```bash
-# Run tests and capture output
-npm test 2>&1 | tee test-output.log
+# Check for uncaught errors specifically
+npm test 2>&1 | grep -i "uncaught" || echo "✓ No uncaught errors found"
 
-# Check for uncaught errors (should return no matches)
-grep -i "uncaught error" test-output.log
-# Expected: No output (exit code 1, which we treat as success)
+# Check for console.error artifacts from modified test files
+npm test 2>&1 | grep "console.error" | grep -E "(useFormStack|useFormStackURLSync)" || echo "✓ No console.error artifacts from target tests"
 
-# Check for React Uncaught messages (should return no matches)
-grep "Uncaught" test-output.log
-# Expected: No output (exit code 1, which we treat as success)
+# Verify error suppression pattern is in place
+grep -q "console.error = vi.fn()" src/hooks/__tests__/useFormStack.test.tsx && echo "✓ useFormStack.test.tsx has suppression"
+grep -q "console.error = vi.fn()" src/hooks/__tests__/useFormStackURLSync.test.tsx && echo "✓ useFormStackURLSync.test.tsx has suppression"
 
-# Check for console.error spam (should return no matches)
-grep "console.error" test-output.log | grep -v "expected"
-# Expected: No output (exit code 1, which we treat as success)
+# Expected: All checks pass with ✓ indicators
 ```
 
-### Level 3: Comprehensive Validation (All Checks)
+### Level 4: Output Analysis & Documentation
 
 ```bash
-# Single comprehensive validation command
-npm test 2>&1 | tee test-output.log && \
-  ! grep -i "uncaught error" test-output.log && \
-  ! grep "Uncaught" test-output.log && \
-  ! grep "console.error" test-output.log | grep -v "expected" && \
-  echo "✅ PASSED: Clean test output validated"
+# Capture full test output for documentation
+npm test 2>&1 > /tmp/full_test_output.txt
 
-# Expected: All checks pass, final message displayed
-# If any check fails, the chain breaks and no success message appears
-```
+# Extract test summary
+grep -E "(Test Files|Tests|Duration)" /tmp/full_test_output.txt
 
-### Level 4: Documentation Generation (Final Output)
+# Verify zero uncaught errors
+! grep -i "uncaught" /tmp/full_test_output.txt && echo "✓ Clean output confirmed"
 
-```bash
-# After successful validation, create the documentation
+# Create validation report
 cat > plan/bugfix/architecture/test_validation.md << 'EOF'
-# Test Output Validation Results
+# Test Suite Validation Report
 
-## Summary
+**Date**: [Current date from date command]
+**Task**: P1.M1.T2.S2 - Verify all test suites produce clean output
 
-**Validation Date:** $(date -Iseconds)
-**Task:** P1.M1.T2.S2 - Verify all test suites produce clean output
-**Status:** ✅ PASSED
+## Test Suite Summary
 
-## Test Run Results
+- **Test Files**: 23 passed (23)
+- **Tests**: 260 passed (260)
+- **Duration**: ~2s
 
-### Test Statistics
-- Total Test Files: 21
-- Total Tests: 249
-- Passed: 249
-- Failed: 0
-- Duration: ~2-3 seconds
+## Clean Output Validation
 
-### Error Artifact Checks
+### Uncaught Error Check
+- **Result**: ✓ PASS - Zero "uncaught error" or "Uncaught" messages in stderr
+- **Command**: `npm test 2>&1 | grep -i "uncaught"`
+- **Output**: No matches found
 
-| Check | Pattern | Result |
-|-------|---------|--------|
-| Uncaught Errors (case-insensitive) | `grep -i "uncaught error"` | ✅ None found |
-| React Uncaught Messages | `grep "Uncaught"` | ✅ None found |
-| Console Errors | `grep "console.error"` | ✅ None found |
+### Console.error Artifacts Check
+- **Result**: ✓ PASS - Zero console.error artifacts from useFormStack tests
+- **Command**: `npm test 2>&1 | grep "console.error" | grep -E "(useFormStack|useFormStackURLSync)"`
+- **Output**: No matches found
 
-### Modified Test Files
+### Error Suppression Pattern Verification
+- **useFormStack.test.tsx**: ✓ PASS - Suppression present at lines 60-70
+- **useFormStackURLSync.test.tsx**: ✓ PASS - Suppression present at lines 373-390
 
-The following test files had console.error suppression applied:
-1. `src/hooks/__tests__/useFormStack.test.tsx` (P1.M1.T1.S2)
-2. `src/hooks/__tests__/useFormStackURLSync.test.tsx` (P1.M1.T2.S1)
+## Conclusion
 
-Both files use the pattern:
-\`\`\`typescript
-const originalError = console.error;
-beforeEach(() => { console.error = vi.fn(); });
-afterEach(() => { console.error = originalError; });
-\`\`\`
-
-### Conclusion
-
-All tests pass with clean output. No error artifacts detected.
-The console.error suppression pattern successfully eliminates React's
-automatic error logging for expected errors in error boundary tests.
+All validation checks passed. The test suite produces clean output with zero error artifacts. The console.error suppression implemented in P1.M1.T1.S2 and P1.M1.T2.S1 is working correctly.
 EOF
+
+# Expected: Validation report created successfully
 ```
 
 ## Final Validation Checklist
 
 ### Technical Validation
 
-- [ ] All tests pass: `npm test` returns exit code 0
-- [ ] Test count verified: 249 tests across 21 files
-- [ ] No uncaught errors in output: `! grep -i "uncaught error" test-output.log`
-- [ ] No React Uncaught messages: `! grep "Uncaught" test-output.log`
-- [ ] No unexpected console errors: Visual inspection confirms clean output
+- [ ] All tests pass: `npm test` shows 260 tests passed
+- [ ] Zero uncaught errors: `npm test 2>&1 | grep -i "uncaught"` returns nothing
+- [ ] Zero console.error artifacts from target test files
+- [ ] Validation report created at `plan/bugfix/architecture/test_validation.md`
+- [ ] Report contains actual test count (260, not 220 from outdated docs)
 
 ### Feature Validation
 
-- [ ] useFormStack.test.tsx still tests error handling correctly
-- [ ] useFormStackURLSync.test.tsx still tests error handling correctly
-- [ ] Error boundaries still function as expected (errors are caught, just not logged)
-- [ ] All other test files unaffected by previous changes
-
-### Documentation Validation
-
-- [ ] `plan/bugfix/architecture/test_validation.md` created
-- [ ] Document includes timestamp and test counts
-- [ ] Document includes validation results for all three checks
-- [ ] Document lists modified test files
-- [ ] Clean, professional formatting
+- [ ] Error handling tests still validate errors are thrown (tests not broken)
+- [ ] console.error suppression scoped only to error handling describe blocks
+- [ ] beforeEach/afterEach properly restore console.error
+- [ ] No changes to test logic - only suppression was added in previous subtasks
 
 ### Code Quality Validation
 
-- [ ] No code changes required (validation only)
-- [ ] No tests modified (verification only)
-- [ ] No new dependencies added
-- [ ] Documentation is clear and comprehensive
+- [ ] Error suppression pattern consistent across all test files
+- [ ] Comments present: "Suppress console.error for expected errors in this block"
+- [ ] No global suppression - only scoped to specific describe blocks
+- [ ] Pattern matches useFormStack.test.tsx and useFormStackURLSync.test.tsx implementations
+
+### Documentation & Deployment
+
+- [ ] Validation report includes timestamp and task reference
+- [ ] Report documents actual test count (260 tests)
+- [ ] Report confirms clean output with evidence
+- [ ] No new dependencies or configuration changes required
 
 ---
 
 ## Anti-Patterns to Avoid
 
-- ❌ Don't modify test code - this is a validation task only
-- ❌ Don't suppress test output that indicates real failures
-- ❌ Don't ignore test failures - all 249 tests must pass
-- ❌ Don't skip the documentation step - create test_validation.md
-- ❌ Don't rely on visual inspection alone - use grep for validation
-- ❌ Don't forget to check both case-sensitive and case-insensitive patterns
-- ❌ Don't validate against outdated test counts (use actual count from test run)
-- ❌ Don't proceed if any test fails - fix must come before this task
+- **Don't count tests manually** - Use actual count from `npm test` output (260, not 220)
+- **Don't confuse act warnings with uncaught errors** - "An update to FormStackProvider inside a test was not wrapped in act(...)" are React dev warnings, not uncaught errors
+- **Don't modify test code** - This is a validation task only, no code changes
+- **Don't ignore stderr** - Must capture both stdout and stderr with `2>&1`
+- **Don't skip the documentation** - Must create validation report at specified location
+- **Don't forget to verify previous work** - Check that P1.M1.T1.S2 and P1.M1.T2.S1 suppression is still in place
 
-## Quick Reference Commands
+## Appendix: Research Findings
 
-```bash
-# Run tests
-npm test
+### Current State Analysis (2026-01-12)
 
-# Run tests and capture output
-npm test 2>&1 | tee test-output.log
+**Test Suite Status**:
+- **Total test files**: 23 passed (23)
+- **Total tests**: 260 passed (260) [Note: Original docs said 220, but actual count is 260]
+- **Test duration**: ~2 seconds
+- **Framework**: Vitest with jsdom environment
 
-# Check for uncaught errors
-grep -i "uncaught error" test-output.log
+**Error Suppression Status**:
+- `useFormStack.test.tsx`: ✓ Has suppression (P1.M1.T1.S2 complete)
+- `useFormStackURLSync.test.tsx`: ✓ Has suppression (P1.M1.T2.S1 complete)
+- `FormErrorBoundary.test.tsx`: ✓ Has suppression
+- `FormStackRenderer.test.tsx`: ✓ Has suppression
 
-# Check for React Uncaught messages
-grep "Uncaught" test-output.log
+**Clean Output Validation**:
+- Zero "uncaught error" or "Uncaught" messages in current output
+- Zero console.error artifacts from error handling tests
+- Only expected test output appears
 
-# Check exit code of last command
-echo $?
+### Pattern Consistency
 
-# Comprehensive validation
-npm test 2>&1 | tee test-output.log && \
-  ! grep -i "uncaught error" test-output.log && \
-  ! grep "Uncaught" test-output.log && \
-  echo "✅ Clean test output validated"
+All error handling tests follow the same pattern:
+```typescript
+describe('error handling' | 'when used outside FormStackProvider', () => {
+  const originalError = console.error;
 
-# Count tests
-npm test | grep "Tests |"
+  beforeEach(() => {
+    console.error = vi.fn();
+  });
 
-# View specific test file output
-npm test src/hooks/__tests__/useFormStack.test.tsx
+  afterEach(() => {
+    console.error = originalError;
+  });
+
+  it('should throw error...', () => {
+    // Test that validates expected error is thrown
+  });
+});
 ```
+
+### Expected Output Format
+
+Vitest produces output in this format:
+```
+ RUN  v2.1.9 /path/to/project
+ ✓ src/path/to/test.test.ts (N tests) Xms
+ ...
+ Test Files  X passed (X)
+ Tests  XXX passed (XXX)
+ Duration  X.XXs
+```
+
+Stderr is interleaved with test output for errors/warnings.
 
 ---
 
-## Confidence Score
+**Confidence Score**: 10/10
 
-**8/10** - High confidence for one-pass implementation success
-
-**Reasoning:**
-- Clear, deterministic validation criteria
-- Well-defined test structure and commands
-- Previous subtasks completed successfully
-- Comprehensive validation patterns provided
-- Only potential issue: Test count discrepancy (220 vs 249) in documentation
-
-**Risk Mitigation:**
-- Validate actual test count during run (use observed count, not documented count)
-- Use comprehensive grep patterns to catch all error artifacts
-- Document both expected and actual results
+**Rationale**: This is a straightforward validation task with exact commands, expected outputs, and clear success criteria. The task involves running existing tests, checking for specific patterns in output, and documenting results. No code implementation is required.
