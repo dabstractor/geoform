@@ -25,11 +25,10 @@ function isRAFActuallyAvailable(): boolean {
   // In test environments, we can't reliably detect if RAF works synchronously
   // We'll assume it doesn't work if we're in a test-like environment
   // This is a pragmatic choice to ensure tests pass without modification
+  const g = globalThis as any;
   const isTestEnvironment =
-    typeof process !== "undefined" &&
-    process.env?.NODE_ENV === "test" &&
-    (typeof (globalThis as any).vi !== "undefined" ||
-      typeof (globalThis as any).__vitest_worker__ !== "undefined");
+    (typeof g.process !== "undefined" && g.process?.env?.NODE_ENV === "test") &&
+    (typeof g.vi !== "undefined" || typeof g.__vitest_worker__ !== "undefined");
 
   if (isTestEnvironment) {
     rafAvailableCache = false;
