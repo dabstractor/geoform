@@ -25,7 +25,7 @@ describe("useFormStackURLSync", () => {
 
   beforeEach(() => {
     // Reset mocks
-    mockPushState = vi.fn((state: any, title: string, url: string) => {
+    mockPushState = vi.fn((_state: any, _title: string, url: string) => {
       // Update window.location to reflect the URL change
       if (url) {
         try {
@@ -53,7 +53,7 @@ describe("useFormStackURLSync", () => {
         }
       }
     });
-    mockReplaceState = vi.fn((state: any, title: string, url: string) => {
+    mockReplaceState = vi.fn((_state: any, _title: string, url: string) => {
       // Update window.location to reflect the URL change
       if (url) {
         try {
@@ -456,7 +456,7 @@ describe("useFormStackURLSync", () => {
   function useFormStackWithURLSync() {
     const formStack = useFormStack();
     const { popToIndex } = useFormStackActions();
-    const urlSync = useFormStackURLSync({ popToIndex });
+    const urlSync = useFormStackURLSync();
     return { ...urlSync, ...formStack, popToIndex };
   }
 
@@ -804,7 +804,7 @@ describe("useFormStackURLSync", () => {
 
       await waitFor(() => {
         expect(result.current.stack).toHaveLength(1);
-        expect(result.current.stack[0].id).toBe("form-1");
+        expect(result.current.stack[0]?.id).toBe("form-1");
       });
     });
 
