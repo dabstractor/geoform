@@ -84,7 +84,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S1",
                   "title": "Document autoRender prop + dev-mode guard on FormStackProvider",
-                  "status": "Ready",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §3.2 — the `#### FormStackProvider` block (README.md ~line 128-146) currently says '**Props:** None required.' and has no autoRender mention (0 grep hits). PRD §5.1 h4.0 defines autoRender (default true; false hosts the viewport yourself).\n2. INPUT: The exact autoRender semantics from src/components/FormStackProvider.tsx (FormStackProviderProps.autoRender, default true) and PRD §5.1. The dev-mode forgotten-host guard behavior from audit_findings.md bullet 4 (warns ≤ once per episode when autoRender={false} + open form + no mounted <FormStackViewport/>).\n3. LOGIC: In README.md, expand the FormStackProvider '**Props:**' area (~line 144) into a props table adding the `autoRender` row (Type: boolean, Default: true, Description: true = provider renders the viewport itself (v1 behavior); false = host the viewport yourself via <FormStackViewport/>). Keep 'children rendered normally.' Add a short dev-mode guard note. Add a minimal tsx snippet: <FormStackProvider autoRender={false}>...</FormStackProvider>. Match the house-style component-entry template.\n4. OUTPUT: `grep -c autoRender README.md` ≥ 1. The FormStackProvider section documents the prop and the guard.\n5. DOCS: [Mode B] This subtask IS a README documentation edit (the changeset-level doc). No source files touched. Cross-link the new entry to the Hostable Viewport section (P1.M2.T2.S1) once it exists.",
@@ -98,7 +98,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S2",
                   "title": "Document cancelForm + popToIndex across action tables and FormStackActions type",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S2"

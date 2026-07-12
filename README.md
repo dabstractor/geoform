@@ -141,7 +141,25 @@ function App() {
 }
 ```
 
-**Props:** None required. Children are rendered normally.
+Children are rendered normally — the provider adds no wrapper DOM around them. The optional `autoRender` prop controls who renders the stacked form bodies:
+
+**Props:**
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `autoRender` | `boolean` | `true` | When `true` (default), the provider renders the form-stack viewport itself, as a sibling of `children` (v1 behavior; zero migration). When `false`, the provider renders **no** viewport — host it yourself by rendering `<FormStackViewport/>` where you want the stacked form bodies (e.g. inside a single shared modal). The `<ConfirmationDialog/>` is always rendered regardless. See [Hostable Viewport](#hostable-viewport-single-shared-modal). |
+
+```tsx
+import { FormStackProvider, FormStackViewport } from 'geoform';
+
+// Host the viewport yourself (e.g. inside one shared modal):
+<FormStackProvider autoRender={false}>
+  {app}
+  {/* render <FormStackViewport/> somewhere in your host UI */}
+</FormStackProvider>
+```
+
+> **Dev-mode guard:** When `autoRender={false}`, a form is open, and no `<FormStackViewport/>` has mounted, the provider logs a `console.warn` at most once per "forgotten host" episode (development only; the warning resets once a viewport mounts or the stack clears).
 
 ---
 
