@@ -365,5 +365,41 @@ describe('FormStackRenderer', () => {
         expect.any(String)
       );
     });
+
+    it('should route form-invoked onError to the boundary without rejecting or popping', () => {
+      // Arrange - a form that calls onError on a click
+      const deferred = createMockDeferred<unknown>();
+      const rejectSpy = vi.spyOn(deferred, 'reject');
+      const resolveSpy = vi.spyOn(deferred, 'resolve');
+      const entry: InternalStackEntry<unknown> = {
+        id: 'onerror-form',
+        label: 'OnError Form',
+        component: ({ onError }: FormProps<unknown>) => (
+          <div data-testid="onerror-form">
+            <button data-testid="fire-error" onClick={() => onError!(new Error('boom'))}>
+              Fire Error
+            </button>
+          </div>
+        ),
+        confirmOnCancel: false,
+        deferred,
+      };
+      const onClose = vi.fn();
+      const onCancelRequest = createMockCancelRequest();
+
+      // Act
+      render(
+        <FormStackRenderer stack={[entry]} onClose={onClose} onCancelRequest={onCancelRequest} />
+      );
+      fireEvent.click(screen.getByTestId('fire-error'));
+
+      // Assert - PRD §9: no reject, no resolve, no pop
+      expect(rejectSpy).not.toHaveBeenCalled();
+      expect(resolveSpy).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
+      // Error surfaced to the boundary fallback UI
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByText('boom')).toBeInTheDocument();
+    });
   });
 });

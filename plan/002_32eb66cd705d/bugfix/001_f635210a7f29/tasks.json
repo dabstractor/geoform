@@ -11,14 +11,14 @@
           "type": "Milestone",
           "id": "P1.M1",
           "title": "Major Defect Fixes",
-          "status": "Planned",
+          "status": "Researching",
           "description": "Fix the two Major issues: (1) form-invoked onError mutates the stack and rejects openForm() violating PRD §9; (2) concurrent cancel requests orphan the first confirmation promise. Both are deterministic, affect documented public APIs, and have zero test coverage.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M1.T1",
               "title": "Fix form-invoked onError to comply with PRD §9 (Issue 1)",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Decouple the form-invoked onError from stack mutation. Currently FormStackRenderer.handleError rejects the openForm() deferred and immediately pops the form, violating PRD §9 ('Errors do not mutate stack state automatically'). The fix routes the error into the existing FormErrorBoundary so its compliant Retry/Dismiss UI handles it, keeps the form mounted, and does not reject openForm().",
               "subtasks": [
                 {
@@ -39,7 +39,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T1.S2",
                   "title": "Rework FormStackRenderer.handleError to route errors to FormErrorBoundary instead of rejecting/popping",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T1.S1"
@@ -58,14 +58,14 @@
               "type": "Task",
               "id": "P1.M1.T2",
               "title": "Fix concurrent confirmation request orphaning (Issue 2)",
-              "status": "Planned",
+              "status": "Researching",
               "description": "When a second cancel/popToIndex request arrives while a confirmation dialog is already open, the single-slot PendingConfirmation state is overwritten, orphaning the first request's resolve callback so its promise never settles. The fix coalesces concurrent waiters onto a single dialog.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T2.S1",
                   "title": "Coalesce concurrent confirmation waiters in FormStackProvider",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 2,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/002_32eb66cd705d/bugfix/001_f635210a7f29/architecture/issue_analysis.md §Issue 2 and architecture/system_context.md §Confirmation System. The FormStackProvider (src/components/FormStackProvider.tsx) uses a single useState<PendingConfirmation | null> slot. PendingConfirmation currently has { affectedForms: string[]; resolve: (confirmed: boolean) => void }. Both cancelForm() (via handleCancelRequest, :213-217) and popToIndex() (:188-191) call requestConfirmation. The handlers handleConfirmationConfirm and handleConfirmationCancel (:230-243) read pendingConfirmation from closure and call .resolve(true/false).\n2. INPUT: No inputs from other subtasks. This is a self-contained fix within FormStackProvider.tsx. The ConfirmationDialog component's title logic reads pendingConfirmation.affectedForms.length for pluralization — this still works with merged affected forms.\n3. LOGIC:\n   a) Change the PendingConfirmation interface: replace `resolve: (confirmed: boolean) => void` with `resolvers: Set<(confirmed: boolean) => void>`.\n   b) Change requestConfirmation to use the functional setState form so it can coalesce:\n      ```ts\n      const requestConfirmation = useCallback((affectedForms: string[]): Promise<boolean> => {\n        return new Promise((resolve) => {\n          setPendingConfirmation((prev) => {\n            if (prev) {\n              return {\n                affectedForms: [...new Set([...prev.affectedForms, ...affectedForms])],\n                resolvers: new Set([...prev.resolvers, resolve]),\n              };\n            }\n            return { affectedForms, resolvers: new Set([resolve]) };\n          });\n        });\n      }, []);\n      ```\n   c) Change handleConfirmationConfirm and handleConfirmationCancel to iterate the Set and resolve all waiters with the same answer, using functional setState (this also makes them stable — remove pendingConfirmation from their useCallback dependency arrays):\n      ```ts\n      const handleConfirmationConfirm = useCallback(() => {\n        setPendingConfirmation((prev) => { prev?.resolvers.forEach((r) => r(true)); return null; });\n      }, []);\n      const handleConfirmationCancel = useCallback(() => {\n        setPendingConfirmation((prev) => { prev?.resolvers.forEach((r) => r(false)); return null; });\n      }, []);\n      ```\n   d) The ConfirmationDialog's title prop logic in the JSX references `pendingConfirmation.affectedForms.length` — this still works because the field name is unchanged. Verify the plural title ('Discard Changes to N Forms?') works when forms are merged.\n4. OUTPUT: Concurrent cancelForm()/popToIndex() calls that trigger confirmation now coalesce onto a single dialog. All tracked promises settle when the user responds. No promise is orphaned.\n5. MOCKING: Write an integration test: render FormStackProvider with a confirmOnCancel:true form. Call cancelForm() twice rapidly (two promises in flight). Track both via .finally(() => settled[i] = true). Click 'Keep Editing' once. Assert via waitFor that both settled[0] and settled[1] are true within a timeout. Also test the 'Discard' path: both resolve true, stack clears.\n6. DOCS: none — no user-facing/config/API surface change. The public behavior (cancel resolves, keep editing doesn't) is unchanged; only the internal re-entrancy bug is fixed.",

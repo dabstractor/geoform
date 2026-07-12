@@ -31,7 +31,17 @@ export interface FormProps<T = unknown> {
   onSubmit: (value: T) => void;
   /** Called when form is canceled (returns undefined to parent) */
   onCancel: () => void;
-  /** Optional error handler for form-level errors */
+  /**
+   * Called by a form to surface an application-level error (e.g. a failed save).
+   * The provider routes this to the surrounding {@link FormErrorBoundary}, which
+   * shows inline Retry / Dismiss UI — it does **not** reject the `openForm()`
+   * promise (the `T | undefined` contract holds) and does **not** mutate the
+   * stack (PRD §9). On Dismiss the form is cancelled (`openForm()` resolves
+   * `undefined`); on Retry the form remounts and `openForm()` remains pending.
+   *
+   * @param error - The error to surface in the boundary fallback UI.
+   * @see {@link FormErrorBoundary} - Renders the Retry/Dismiss fallback
+   */
   onError?: (error: unknown) => void;
 }
 

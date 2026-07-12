@@ -1,4 +1,4 @@
-import { createElement, type ReactElement } from 'react';
+import { createElement, useRef, type ReactElement } from 'react';
 import type { InternalStackEntry, FormProps } from '../types';
 import { FormErrorBoundary } from './FormErrorBoundary';
 
@@ -28,6 +28,11 @@ export interface FormStackRendererProps {
  * ```
  */
 export function FormStackRenderer({ stack, onClose, onCancelRequest }: FormStackRendererProps): ReactElement | null {
+  // Per-entry boundary refs so handleError can imperatively surface form-invoked
+  // errors to the correct FormErrorBoundary instance. Declared BEFORE the early
+  // return below to obey the Rules of Hooks.
+  const boundaryRefs = useRef(new Map<string, FormErrorBoundary>());
+
   // No forms to render
   if (stack.length === 0) {
     return null;
@@ -65,8 +70,15 @@ export function FormStackRenderer({ stack, onClose, onCancelRequest }: FormStack
         };
 
         const handleError = (error: unknown) => {
-          entry.deferred.reject(error);
-          onClose();
+          // Normalize non-Error throws (onError type is `unknown`) so the boundary
+          // always receives an Error instance.
+          const err = error instanceof Error ? error : new Error(String(error));
+          // Log here — showError does NOT fire componentDidCatch or the boundary's
+          // onError prop (no React error was caught).
+          console.error(`[FormStack] Form-invoked onError in form ${entry.id}:`, err);
+          // Route to THIS entry's boundary fallback UI (Retry/Dismiss).
+          boundaryRefs.current.get(entry.id)?.showError(err);
+          // NO reject, NO onClose — stack unchanged, openForm() stays pending (PRD §9).
         };
 
         // Inject callbacks into the form component
@@ -85,6 +97,10 @@ export function FormStackRenderer({ stack, onClose, onCancelRequest }: FormStack
             data-form-id={entry.id}
           >
             <FormErrorBoundary
+              ref={(instance) => {
+                if (instance) boundaryRefs.current.set(entry.id, instance);
+                else boundaryRefs.current.delete(entry.id);
+              }}
               formId={entry.id}
               onDismiss={() => {
                 // Same behavior as cancel - resolve with undefined
