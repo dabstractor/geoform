@@ -255,3 +255,107 @@ describe('FormStackProvider - closeForm development warning', () => {
     });
   });
 });
+
+// Trivial form component for the duplicate-id warning tests. It is never
+// interacted with; it only needs to be a valid ComponentType<FormProps<unknown>>.
+const StubForm = () => <div data-testid="stub-form" />;
+
+describe('FormStackProvider - openForm duplicate id warning', () => {
+  describe('development mode', () => {
+    let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      vi.stubEnv('NODE_ENV', 'development');
+      if (process?.env) {
+        process.env.NODE_ENV = 'development';
+      }
+      consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      if (process?.env) {
+        process.env.NODE_ENV = 'test';
+      }
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('warns when a form with a duplicate id is opened', () => {
+      const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+
+      act(() => {
+        result.current.openForm({ id: 'dup', component: StubForm });
+      });
+      // The second openForm reuses 'dup'. Each call is wrapped in its own act()
+      // so the first PUSH_FORM is flushed and the updated state.stack is visible
+      // to the duplicate check in the (new) openForm closure.
+      act(() => {
+        result.current.openForm({ id: 'dup', component: StubForm });
+      });
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Duplicate form id "dup"'),
+      );
+    });
+
+    it('does not warn when ids are unique', () => {
+      const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+
+      act(() => {
+        result.current.openForm({ id: 'a', component: StubForm });
+      });
+      act(() => {
+        result.current.openForm({ id: 'b', component: StubForm });
+      });
+
+      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Duplicate form id'),
+      );
+    });
+
+    it('does not warn for the first occurrence of an id', () => {
+      const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+
+      act(() => {
+        result.current.openForm({ id: 'solo', component: StubForm });
+      });
+
+      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Duplicate form id'),
+      );
+    });
+  });
+
+  describe('production mode', () => {
+    let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      vi.stubEnv('NODE_ENV', 'production');
+      if (process?.env) {
+        process.env.NODE_ENV = 'production';
+      }
+      consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      if (process?.env) {
+        process.env.NODE_ENV = 'test';
+      }
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('does not warn for duplicate ids in production', () => {
+      const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+
+      act(() => {
+        result.current.openForm({ id: 'dup', component: StubForm });
+      });
+      act(() => {
+        result.current.openForm({ id: 'dup', component: StubForm });
+      });
+
+      expect(consoleWarnSpy).not.toHaveBeenCalled();
+    });
+  });
+});

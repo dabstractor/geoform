@@ -84,7 +84,7 @@
           "type": "Milestone",
           "id": "P1.M2",
           "title": "Minor Defect Fixes",
-          "status": "Researching",
+          "status": "Complete",
           "description": "Fix the two Minor issues: (3) useFormStackViewport() leaks internal component and deferred types, contradicting PRD §10.1 'no internal-type leakage'; (4) duplicate form ids collide on React key with no development guard.",
           "tasks": [
             {
@@ -131,14 +131,14 @@
               "type": "Task",
               "id": "P1.M2.T2",
               "title": "Add development-mode duplicate form ID guard (Issue 4)",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Pushing two forms with the same id produces a React duplicate-key warning in FormStackRenderer and Breadcrumbs (both key by entry.id). The fix adds a development-mode console.warn in openForm when an id already present on the stack is pushed again.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T2.S1",
                   "title": "Add dev-mode duplicate ID warning in FormStackProvider.openForm",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/002_32eb66cd705d/bugfix/001_f635210a7f29/architecture/issue_analysis.md §Issue 4. The openForm function in FormStackProvider (src/components/FormStackProvider.tsx, around line 100) currently has a useCallback dependency array of [] (empty — it does not read state.stack). Adding a dev-mode duplicate-ID check requires reading state.stack, so the dependency array must include state.stack. This changes openForm's reference stability: it will now be a new reference whenever the stack changes. This is acceptable because openForm is called imperatively (onClick handlers), not used as a useEffect dependency. The existing dev-mode guard pattern (checking process.env?.NODE_ENV === 'development') is used elsewhere in this file (closeForm warning, popToIndex RangeError, viewport mount warnings).\n2. INPUT: No inputs from other subtasks. The state.stack is InternalStackEntry<unknown>[] available in the FormStackProvider closure.\n3. LOGIC: At the beginning of the openForm useCallback body, before dispatch({ type: 'PUSH_FORM', ... }), add:\n   ```ts\n   if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {\n     if (state.stack.some((e) => e.id === options.id)) {\n       console.warn(\n         `[FormStack] Duplicate form id \"${options.id}\" detected. ` +\n         'Form IDs should be unique on the stack to avoid React key collisions ' +\n         'in FormStackRenderer and Breadcrumbs (PRD §5.2: \"Unique identifier for this form instance\").'\n       );\n     }\n   }\n   ```\n   Update the useCallback dependency array from [] to [state.stack].\n   Write a failing test: use vi.stubEnv('NODE_ENV', 'development') (and vi.stubGlobal if needed), spy on console.warn, open a form with id 'dup', open another with id 'dup', assert console.warn was called with a message containing 'Duplicate form id'. Then open a form with a unique id and assert no additional warning.\n4. OUTPUT: openForm emits a console.warn in development mode when a duplicate id is pushed. No runtime behavior change (the form still pushes; uniqueness is a documented consumer responsibility). Production is unaffected.\n5. DOCS: [Mode A] Add a note to the OpenFormOptions.id JSDoc in src/types/stack.ts clarifying that duplicate IDs produce a development-mode warning and can cause React key collisions.",
@@ -171,7 +171,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S1",
                   "title": "Update README.md error handling, FormStackViewportValue, and error boundary sections",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S1",

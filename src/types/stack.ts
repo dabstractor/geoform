@@ -47,7 +47,16 @@ export interface StackEntry {
  * ```
  */
 export interface OpenFormOptions<T = unknown> {
-  /** Unique identifier for this form instance */
+  /**
+   * Unique identifier for this form instance.
+   *
+   * IDs must be unique across all forms currently on the stack. Pushing a form
+   * whose `id` is already present produces a **development-mode warning** (a
+   * `console.warn` from `openForm`) because duplicate IDs collide on the React
+   * `key` used by `FormStackRenderer` and `Breadcrumbs`, which can cause form
+   * instance and state mix-ups. Production behavior is unchanged — the form is
+   * still pushed — so uniqueness remains a consumer responsibility (PRD §5.2).
+   */
   id: string;
   /** The form component to render (must accept FormProps<T>) */
   component: ComponentType<FormProps<T>>;

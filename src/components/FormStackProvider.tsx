@@ -118,6 +118,21 @@ export function FormStackProvider({ children, autoRender = true }: FormStackProv
 
   // Full openForm implementation with deferred promise
   const openForm = useCallback(<T,>(options: OpenFormOptions<T>): Promise<T | undefined> => {
+    // Development-mode guard: warn when a duplicate id is pushed onto the stack.
+    // Duplicate ids collide on React `key` in FormStackRenderer and Breadcrumbs
+    // (PRD §5.2 documents id as "Unique identifier for this form instance").
+    // Uniqueness remains a consumer responsibility — the form is still pushed;
+    // this is a diagnostic warning, not a guard. Production is unaffected.
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+      if (state.stack.some((e) => e.id === options.id)) {
+        console.warn(
+          `[FormStack] Duplicate form id "${options.id}" detected. ` +
+          'Form IDs should be unique on the stack to avoid React key collisions ' +
+          'in FormStackRenderer and Breadcrumbs (PRD §5.2: "Unique identifier for this form instance").'
+        );
+      }
+    }
+
     // Create deferred promise for async resolution
     const deferred = createDeferredPromise<T>();
 
@@ -135,7 +150,7 @@ export function FormStackProvider({ children, autoRender = true }: FormStackProv
 
     // Return promise immediately - caller awaits
     return deferred.promise;
-  }, []);
+  }, [state.stack]);
 
   const closeForm = useCallback(() => {
     // Development-mode usage warning
