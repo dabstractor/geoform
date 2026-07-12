@@ -1,5 +1,6 @@
 .claude
 node_modules
+venv
 dist
 coverage
 *.tsbuildinfo
@@ -27,6 +28,7 @@ yarn-error.log*
 lerna-debug.log*
 
 # Build artifacts
+build
 *.tsbuildinfo
 
 # Lock files (optional - uncomment if not committing)
