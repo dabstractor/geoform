@@ -854,6 +854,9 @@ A few things to notice in the host above:
 @see the [`autoRender`](#formstackprovider) prop on `<FormStackProvider/>`, and
 [Common Pitfalls > Forgetting `<FormStackViewport/>`](#forgetting-formstackviewport-with-autorenderfalse).
 
+See [`examples/shared-modal`](./examples/shared-modal) for a complete runnable
+demo of this single-shared-modal pattern (zero dialog-library dependencies).
+
 ## Common Pitfalls
 
 Avoid these common mistakes when working with geoform to ensure your forms work as intended.
@@ -1250,6 +1253,11 @@ See the [examples/relational-forms](./examples/relational-forms) directory for a
 - Breadcrumb navigation
 - Confirmation dialogs
 - Type-safe form data flow
+
+See [`examples/shared-modal`](./examples/shared-modal) for a runnable demo of
+the **hostable viewport / single-shared-modal** pattern
+(`autoRender={false}` + `<FormStackViewport/>`), reusing the same forms as the
+relational-forms example inside one consumer-hosted modal.
 
 ## Browser Support
 
