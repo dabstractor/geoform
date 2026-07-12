@@ -298,6 +298,47 @@ describe('FormStackProvider - openForm duplicate id warning', () => {
       );
     });
 
+    it('warns for duplicate ids pushed in the same synchronous tick (NF-1)', () => {
+      const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+
+      // Both calls happen inside a single synchronous handler — no act()/flush
+      // between them. `dispatch` (useReducer) is async, so `state.stack` in the
+      // openForm closure is stale within this tick. The guard must consult a
+      // synchronous id mirror to catch this (NF-1 fix).
+      act(() => {
+        result.current.openForm({ id: 'same', component: StubForm });
+        result.current.openForm({ id: 'same', component: StubForm });
+      });
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Duplicate form id "same"'),
+      );
+    });
+
+    it('does not re-warn after a duplicate id is popped and re-opened', () => {
+      // Guards against the id mirror accumulating stale ids after a pop: once
+      // 'reopen' is popped it should no longer be considered present, so
+      // reopening it must NOT warn. Verifies the reconciliation effect.
+      const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+
+      act(() => {
+        result.current.openForm({ id: 'reopen', component: StubForm });
+      });
+      // Pop it via closeForm, then flush so the reconciliation effect runs.
+      act(() => {
+        result.current.closeForm();
+      });
+      // Clear call history so we only observe the second open.
+      consoleWarnSpy.mockClear();
+      act(() => {
+        result.current.openForm({ id: 'reopen', component: StubForm });
+      });
+
+      expect(consoleWarnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Duplicate form id'),
+      );
+    });
+
     it('does not warn when ids are unique', () => {
       const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
 

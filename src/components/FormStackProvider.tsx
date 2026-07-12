@@ -80,6 +80,16 @@ export interface FormStackProviderProps {
 export function FormStackProvider({ children, autoRender = true }: FormStackProviderProps) {
   const [state, dispatch] = useReducer(formStackReducer, initialFormStackState);
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
+
+  // Synchronous mirror of the ids currently on the stack, used by the
+  // dev-mode duplicate-id guard. `dispatch` (useReducer) is asynchronous, so
+  // `state.stack` inside the `openForm` closure is stale within a single tick
+  // — two `openForm({id})` calls in the same synchronous handler would both
+  // observe the pre-dispatch stack and bypass the guard. This ref is updated
+  // synchronously on push (re-entrancy-safe), and reconciled on pop via the
+  // effect below (NF-1 fix). It is a dev-only diagnostic aid; the reducer
+  // remains the source of truth for actual stack state.
+  const stackIdsRef = useRef<Set<string>>(new Set());
   // Tracks how many <FormStackViewport/> are currently mounted (for the
   // dev-mode "forgotten host" and "duplicate viewport" warnings when
   // autoRender={false}). The mount channel sends a +1/-1 delta per mount.
@@ -123,8 +133,13 @@ export function FormStackProvider({ children, autoRender = true }: FormStackProv
     // (PRD §5.2 documents id as "Unique identifier for this form instance").
     // Uniqueness remains a consumer responsibility — the form is still pushed;
     // this is a diagnostic warning, not a guard. Production is unaffected.
+    //
+    // The check consults `stackIdsRef` (a synchronous mirror) rather than
+    // `state.stack`, so it is re-entrancy-safe within a single tick: two
+    // `openForm({id})` calls in the same synchronous handler no longer bypass
+    // the guard (NF-1 fix). The id is added to the mirror synchronously below.
     if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
-      if (state.stack.some((e) => e.id === options.id)) {
+      if (stackIdsRef.current.has(options.id)) {
         console.warn(
           `[FormStack] Duplicate form id "${options.id}" detected. ` +
           'Form IDs should be unique on the stack to avoid React key collisions ' +
@@ -148,9 +163,14 @@ export function FormStackProvider({ children, autoRender = true }: FormStackProv
     // Push form onto stack (cast to unknown for reducer type compatibility)
     dispatch({ type: 'PUSH_FORM', entry: entry as InternalStackEntry<unknown> });
 
+    // Synchronously record the id in the mirror so a subsequent same-tick
+    // `openForm({id})` sees it (NF-1 fix). The reducer remains authoritative;
+    // the effect below reconciles this mirror when ids are removed by pops.
+    stackIdsRef.current.add(options.id);
+
     // Return promise immediately - caller awaits
     return deferred.promise;
-  }, [state.stack]);
+  }, []);
 
   const closeForm = useCallback(() => {
     // Development-mode usage warning
@@ -284,6 +304,33 @@ export function FormStackProvider({ children, autoRender = true }: FormStackProv
     popToIndex,
     cancelForm,
   }), [openForm, closeForm, popToIndex, cancelForm]);
+
+  // Reconcile the synchronous id mirror (`stackIdsRef`) with the reducer's
+  // authoritative stack after every state change. Pushes add to the mirror
+  // synchronously in `openForm` (for same-tick re-entrancy safety); this
+  // effect handles the reverse direction — removing ids that were popped via
+  // POP_FORM / POP_TO_INDEX / cancelForm / popToIndex — so the mirror never
+  // accumulates stale ids and the duplicate-id guard stays accurate over time
+  // (NF-1 fix). It also rebuilds the mirror from scratch if it ever drifts
+  // from the actual stack length, as a defensive invariant.
+  useEffect(() => {
+    const currentIds = new Set(state.stack.map((e) => e.id));
+    const mirror = stackIdsRef.current;
+    // Fast path: if sizes already match and every id is present, skip the
+    // (allocation-heavy) rebuild.
+    let inSync = mirror.size === currentIds.size;
+    if (inSync) {
+      for (const id of currentIds) {
+        if (!mirror.has(id)) {
+          inSync = false;
+          break;
+        }
+      }
+    }
+    if (!inSync) {
+      stackIdsRef.current = currentIds;
+    }
+  }, [state.stack]);
 
   // Viewport context value. Null when the stack is empty (or outside a
   // provider) so <FormStackViewport/> and useFormStackViewport() render/return
