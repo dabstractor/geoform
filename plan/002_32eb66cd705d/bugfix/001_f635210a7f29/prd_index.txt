@@ -1,0 +1,12 @@
+h1.0 Bug Fix Requirements
+ h2.0 Overview
+ h2.1 Critical Issues (Must Fix)
+ h2.2 Major Issues (Should Fix)
+  h3.0 Issue 1: Form-invoked onError mutates the stack AND rejects openForm() — violates PRD §9
+  h3.1 Issue 2: Concurrent cancel requests orphan the first confirmation promise (cancelForm/popToIndex never settle)
+ h2.3 Minor Issues (Nice to Fix)
+  h3.2 Issue 3: useFormStackViewport() / FormStackViewportValue leak internal component and deferred — contradicts PRD §10.1 "no internal-type leakage"
+  h3.3 Issue 4: Duplicate form ids collide on React key with no guard
+ h2.4 Testing Summary
+---
+code:4 para:33 list:6

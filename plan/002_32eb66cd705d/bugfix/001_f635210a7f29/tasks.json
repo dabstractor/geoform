@@ -1,0 +1,165 @@
+{
+  "backlog": [
+    {
+      "type": "Phase",
+      "id": "P1",
+      "title": "Adversarial QA Remediation — geoform 0.2.0 Bug Fixes",
+      "status": "Ready",
+      "description": "Remediate the 4 pre-existing defects (2 Major, 2 Minor) identified during the adversarial QA pass of the geoform implementation against PRD v1 with the 0.2.0 hostable-viewport delta. Baseline: tsc clean, 294/294 tests pass. No critical issues — core open/submit/cancel/nest/state-preservation/breadcrumbs/hostable-viewport all work.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P1.M1",
+          "title": "Major Defect Fixes",
+          "status": "Planned",
+          "description": "Fix the two Major issues: (1) form-invoked onError mutates the stack and rejects openForm() violating PRD §9; (2) concurrent cancel requests orphan the first confirmation promise. Both are deterministic, affect documented public APIs, and have zero test coverage.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M1.T1",
+              "title": "Fix form-invoked onError to comply with PRD §9 (Issue 1)",
+              "status": "Planned",
+              "description": "Decouple the form-invoked onError from stack mutation. Currently FormStackRenderer.handleError rejects the openForm() deferred and immediately pops the form, violating PRD §9 ('Errors do not mutate stack state automatically'). The fix routes the error into the existing FormErrorBoundary so its compliant Retry/Dismiss UI handles it, keeps the form mounted, and does not reject openForm().",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S1",
+                  "title": "Add imperative showError(error) method to FormErrorBoundary",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "prd_selectors": ["h2.2", "h3.0", "h2.0"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/002_32eb66cd705d/bugfix/001_f635210a7f29/architecture/issue_analysis.md §Issue 1 and architecture/system_context.md §Error Handling. FormErrorBoundary (src/components/FormErrorBoundary.tsx) is a React class component. It already has getDerivedStateFromError(error) that sets { hasError: true, error }. A public instance method that calls this.setState({ hasError: true, error }) will trigger the same re-render path and display the existing Retry/Dismiss fallback UI. No forwardRef is needed — refs to class components give direct instance access in React 18/19.\n2. INPUT: No inputs from other subtasks. This is the foundation subtask. The FormErrorBoundary class already has FormErrorBoundaryState { hasError: boolean; error: Error | null; retryCount: number } and a handleRetry method that clears hasError and increments retryCount.\n3. LOGIC: Add a new public instance method to the FormErrorBoundary class:\n   ```ts\n   /**\n    * Imperatively display the error fallback UI for a non-render error\n    * (e.g. a form-invoked onError). Sets the same state as\n    * getDerivedStateFromError so the existing Retry/Dismiss UI appears.\n    *\n    * Note: componentDidCatch and the onError prop callback do NOT fire for\n    * imperatively-set errors (no React error was caught). Callers should\n    * handle their own logging before calling this method.\n    */\n   showError(error: Error): void {\n     this.setState({ hasError: true, error });\n   }\n   ```\n   Write a failing test first: render FormErrorBoundary with children, obtain a ref, call ref.current.showError(new Error('test')), assert the fallback UI appears (getByRole('alert'), getByText('test')). Then implement. Verify that clicking Retry clears the error and re-renders children, and that clicking Dismiss calls the onDismiss prop. Import the type FormErrorBoundaryHandle or use InstanceType<typeof FormErrorBoundary> for the ref type in tests.\n4. OUTPUT: FormErrorBoundary now exposes a public showError(error: Error) instance method. Consumers with a ref to the boundary can imperatively trigger the error fallback UI. The class type FormErrorBoundary can be used as a ref target (e.g. React.RefObject<FormErrorBoundary>). Export the class type from src/components/index.ts if not already exported.\n5. DOCS: [Mode A] Update the JSDoc on the FormErrorBoundary class (src/components/FormErrorBoundary.tsx) to document the new showError(error) method, noting it is for non-render errors (form-invoked onError path) and that componentDidCatch/onError do not fire for it."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S2",
+                  "title": "Rework FormStackRenderer.handleError to route errors to FormErrorBoundary instead of rejecting/popping",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": ["P1.M1.T1.S1"],
+                  "prd_selectors": ["h2.2", "h3.0", "h2.4", "h2.0"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/002_32eb66cd705d/bugfix/001_f635210a7f29/architecture/issue_analysis.md §Issue 1. The current handleError in FormStackRenderer (src/components/FormStackRenderer.tsx:67-69) does entry.deferred.reject(error) then onClose(). This violates PRD §9. The render-error path (FormErrorBoundary) is already compliant — it shows Retry/Dismiss without mutating the stack. The fix makes the form-invoked onError path consistent by routing to the boundary's showError() method (from P1.M1.T1.S1).\n2. INPUT: FormErrorBoundary now has a public showError(error: Error) method (from P1.M1.T1.S1). The FormStackRenderer maps over InternalStackEntry<unknown>[] and wraps each in a FormErrorBoundary with onDismiss={() => { entry.deferred.resolve(undefined); onClose(); }}.\n3. LOGIC:\n   a) Add a ref Map to FormStackRenderer: `const boundaryRefs = useRef(new Map<string, FormErrorBoundary>());`\n   b) In the JSX map, add a ref callback to each FormErrorBoundary: `ref={(instance) => { if (instance) boundaryRefs.current.set(entry.id, instance); else boundaryRefs.current.delete(entry.id); }}`\n   c) Replace handleError: instead of `entry.deferred.reject(error); onClose();`, do:\n      ```ts\n      const handleError = (error: unknown) => {\n        const err = error instanceof Error ? error : new Error(String(error));\n        console.error(`[FormStack] Form-invoked onError in form ${entry.id}:`, err);\n        boundaryRefs.current.get(entry.id)?.showError(err);\n        // NO reject, NO onClose — form stays mounted, stack unchanged,\n        // openForm() stays pending (PRD §9 compliant).\n      };\n      ```\n   d) The existing onDismiss handler on FormErrorBoundary is correct: when the user clicks Dismiss after seeing the error, it resolves the deferred with undefined (cancel semantics) and pops the form. When the user clicks Retry, the boundary clears hasError and the form remounts — the deferred is still pending.\n   e) Import FormErrorBoundary type for the ref Map type annotation.\n4. OUTPUT: FormStackRenderer.handleError now routes form-invoked errors to the boundary's error UI without mutating the stack or rejecting the promise. The form-invoked onError path is now consistent with the render-error path (both show Retry/Dismiss, neither auto-pops).\n5. MOCKING: In the integration test, mock the form component to call its onError prop on a button click. Track the openForm() promise for rejection (it should NOT reject). Track unhandledRejection events (should NOT fire). Assert stack-length stays 1 after onError fires. Assert the error boundary fallback UI is visible (getByRole('alert')).\n6. DOCS: [Mode A] Update the FormProps.onError JSDoc in src/types/form.ts to clarify that onError surfaces the error to the FormErrorBoundary (inline Retry/Dismiss UI) and does NOT reject openForm() or mutate the stack — aligning with PRD §9."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M1.T2",
+              "title": "Fix concurrent confirmation request orphaning (Issue 2)",
+              "status": "Planned",
+              "description": "When a second cancel/popToIndex request arrives while a confirmation dialog is already open, the single-slot PendingConfirmation state is overwritten, orphaning the first request's resolve callback so its promise never settles. The fix coalesces concurrent waiters onto a single dialog.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S1",
+                  "title": "Coalesce concurrent confirmation waiters in FormStackProvider",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [],
+                  "prd_selectors": ["h2.2", "h3.1", "h2.4", "h2.0"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/002_32eb66cd705d/bugfix/001_f635210a7f29/architecture/issue_analysis.md §Issue 2 and architecture/system_context.md §Confirmation System. The FormStackProvider (src/components/FormStackProvider.tsx) uses a single useState<PendingConfirmation | null> slot. PendingConfirmation currently has { affectedForms: string[]; resolve: (confirmed: boolean) => void }. Both cancelForm() (via handleCancelRequest, :213-217) and popToIndex() (:188-191) call requestConfirmation. The handlers handleConfirmationConfirm and handleConfirmationCancel (:230-243) read pendingConfirmation from closure and call .resolve(true/false).\n2. INPUT: No inputs from other subtasks. This is a self-contained fix within FormStackProvider.tsx. The ConfirmationDialog component's title logic reads pendingConfirmation.affectedForms.length for pluralization — this still works with merged affected forms.\n3. LOGIC:\n   a) Change the PendingConfirmation interface: replace `resolve: (confirmed: boolean) => void` with `resolvers: Set<(confirmed: boolean) => void>`.\n   b) Change requestConfirmation to use the functional setState form so it can coalesce:\n      ```ts\n      const requestConfirmation = useCallback((affectedForms: string[]): Promise<boolean> => {\n        return new Promise((resolve) => {\n          setPendingConfirmation((prev) => {\n            if (prev) {\n              return {\n                affectedForms: [...new Set([...prev.affectedForms, ...affectedForms])],\n                resolvers: new Set([...prev.resolvers, resolve]),\n              };\n            }\n            return { affectedForms, resolvers: new Set([resolve]) };\n          });\n        });\n      }, []);\n      ```\n   c) Change handleConfirmationConfirm and handleConfirmationCancel to iterate the Set and resolve all waiters with the same answer, using functional setState (this also makes them stable — remove pendingConfirmation from their useCallback dependency arrays):\n      ```ts\n      const handleConfirmationConfirm = useCallback(() => {\n        setPendingConfirmation((prev) => { prev?.resolvers.forEach((r) => r(true)); return null; });\n      }, []);\n      const handleConfirmationCancel = useCallback(() => {\n        setPendingConfirmation((prev) => { prev?.resolvers.forEach((r) => r(false)); return null; });\n      }, []);\n      ```\n   d) The ConfirmationDialog's title prop logic in the JSX references `pendingConfirmation.affectedForms.length` — this still works because the field name is unchanged. Verify the plural title ('Discard Changes to N Forms?') works when forms are merged.\n4. OUTPUT: Concurrent cancelForm()/popToIndex() calls that trigger confirmation now coalesce onto a single dialog. All tracked promises settle when the user responds. No promise is orphaned.\n5. MOCKING: Write an integration test: render FormStackProvider with a confirmOnCancel:true form. Call cancelForm() twice rapidly (two promises in flight). Track both via .finally(() => settled[i] = true). Click 'Keep Editing' once. Assert via waitFor that both settled[0] and settled[1] are true within a timeout. Also test the 'Discard' path: both resolve true, stack clears.\n6. DOCS: none — no user-facing/config/API surface change. The public behavior (cancel resolves, keep editing doesn't) is unchanged; only the internal re-entrancy bug is fixed."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M2",
+          "title": "Minor Defect Fixes",
+          "status": "Planned",
+          "description": "Fix the two Minor issues: (3) useFormStackViewport() leaks internal component and deferred types, contradicting PRD §10.1 'no internal-type leakage'; (4) duplicate form ids collide on React key with no development guard.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M2.T1",
+              "title": "Fix useFormStackViewport() type leakage (Issue 3)",
+              "status": "Planned",
+              "description": "The low-level public hook useFormStackViewport() returns FormStackViewportValue whose stack field is typed InternalStackEntry<unknown>[], exposing component, deferred.resolve/reject, and confirmOnCancel. The fix separates the internal context value type (needed by the renderer) from the public hook return type (sanitized to StackEntry[]), so consumers cannot hijack form resolution.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S1",
+                  "title": "Define internal context value type and sanitize public FormStackViewportValue",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "prd_selectors": ["h2.3", "h3.2", "h2.0"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/002_32eb66cd705d/bugfix/001_f635210a7f29/architecture/issue_analysis.md §Issue 3 and architecture/system_context.md §Type Hierarchy. Currently FormStackViewportValue (src/types/context.ts:19) and FormStackRendererProps (src/components/FormStackRenderer.tsx:24) are structurally identical, both carrying InternalStackEntry<unknown>[]. The FormStackViewportContext (src/context/FormStackContext.ts:37) is typed createContext<FormStackViewportValue | null>. The provider's viewportValue useMemo creates { stack: state.stack, onClose: closeForm, onCancelRequest: handleCancelRequest } which is the internal shape.\n2. INPUT: No inputs from other subtasks. This is the type-definition foundation.\n3. LOGIC:\n   a) In src/types/context.ts, add a new @internal interface for the context value (same shape as the current FormStackViewportValue but explicitly internal):\n      ```ts\n      /** @internal — carries InternalStackEntry for the renderer; never exposed publicly */\n      export interface FormStackViewportContextValue {\n        stack: InternalStackEntry<unknown>[];\n        onClose: () => void;\n        onCancelRequest: (entry: InternalStackEntry<unknown>) => Promise<boolean>;\n      }\n      ```\n   b) Change the public FormStackViewportValue to a sanitized shape:\n      ```ts\n      export interface FormStackViewportValue {\n        /** Read-only stack entries (id + label only — no internal component/deferred) */\n        stack: readonly StackEntry[];\n        /** Callback to close/pop the top form */\n        onClose: () => void;\n      }\n      ```\n      Remove onCancelRequest from the public type (it takes InternalStackEntry which consumers no longer have). Export FormStackViewportContextValue from src/types/index.ts.\n   c) In src/context/FormStackContext.ts, change FormStackViewportContext type from `FormStackViewportValue | null` to `FormStackViewportContextValue | null`. Update the import.\n4. OUTPUT: Two distinct types: FormStackViewportContextValue (internal, carries InternalStackEntry) for the context, and FormStackViewportValue (public, sanitized to StackEntry[]) for the hook. The context now carries the internal type. The public type no longer exposes component, deferred, confirmOnCancel, or onCancelRequest.\n5. DOCS: [Mode A] Update the JSDoc on FormStackViewportValue in src/types/context.ts to document the sanitized fields and explicitly state that component/deferred are internal-only."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S2",
+                  "title": "Update useFormStackViewport hook to map internal-to-public and fix FormStackViewport + tests",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": ["P1.M2.T1.S1"],
+                  "prd_selectors": ["h2.3", "h3.2", "h2.4", "h2.0"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/002_32eb66cd705d/bugfix/001_f635210a7f29/architecture/issue_analysis.md §Issue 3 and architecture/test_patterns.md §Issue 3. The hook useFormStackViewport (src/hooks/useFormStackViewport.ts) currently returns useContext(FormStackViewportContext) directly. After P1.M2.T1.S1, the context carries FormStackViewportContextValue (internal, with InternalStackEntry) and the hook must return FormStackViewportValue (public, sanitized). The FormStackViewport component (src/components/FormStackViewport.tsx) reads the context and spreads onto <FormStackRenderer {...viewport} /> — this still works because the context now carries FormStackViewportContextValue which is structurally identical to FormStackRendererProps. The existing test useFormStackViewport.test.tsx has a test 'exposes internal entry fields (component/deferred)' that asserts the leak exists — this test must be replaced with one asserting the sanitized surface. The 'FormStackViewportValue is assignable to FormStackRendererProps' test must also change — the public type is intentionally NOT spreadable onto the renderer anymore.\n2. INPUT: FormStackViewportContextValue (internal type) and FormStackViewportValue (sanitized public type) from P1.M2.T1.S1. The context type is now FormStackViewportContextValue | null.\n3. LOGIC:\n   a) In src/hooks/useFormStackViewport.ts, map the internal context value to the public type:\n      ```ts\n      import { useContext, useMemo } from 'react';\n      import { FormStackViewportContext } from '../context';\n      import type { FormStackViewportValue } from '../types';\n\n      export function useFormStackViewport(): FormStackViewportValue | null {\n        const internal = useContext(FormStackViewportContext);\n        return useMemo(() => {\n          if (!internal) return null;\n          return {\n            stack: internal.stack.map(({ id, label }) => ({ id, label })),\n            onClose: internal.onClose,\n          };\n        }, [internal]);\n      }\n      ```\n   b) Verify FormStackViewport.tsx still compiles — it reads useContext(FormStackViewportContext) (now FormStackViewportContextValue | null) and spreads onto <FormStackRenderer>. FormStackRendererProps is structurally identical to FormStackViewportContextValue, so the spread works. No change needed in FormStackViewport.tsx unless the type inference fails — in that case, add an explicit type annotation.\n   c) Update src/hooks/__tests__/useFormStackViewport.test.tsx:\n      - Replace the 'exposes internal entry fields' test with a test asserting the sanitized surface: stack entries have ONLY { id, label }, no 'component', no 'deferred', no 'confirmOnCancel'. Assert value.onClose is a function. Assert 'onCancelRequest' is undefined on the returned value.\n      - Replace the 'FormStackViewportValue is assignable to FormStackRendererProps' test: the public type is intentionally NOT assignable to FormStackRendererProps (that was the leak). Instead, test that FormStackViewportContextValue IS assignable (internal context → renderer props), and that the hook returns the correct sanitized shape.\n   d) Run tsc --noEmit and vitest to verify all types and tests pass.\n4. OUTPUT: useFormStackViewport() returns a sanitized FormStackViewportValue with stack: readonly StackEntry[] (id + label only). Consumers cannot access component, deferred, confirmOnCancel, or onCancelRequest. The <FormStackViewport/> component still renders correctly via the internal context.\n5. DOCS: [Mode A] Update the JSDoc on useFormStackViewport in src/hooks/useFormStackViewport.ts to reflect the sanitized return type. Update the example to show only { stack, onClose } access."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M2.T2",
+              "title": "Add development-mode duplicate form ID guard (Issue 4)",
+              "status": "Planned",
+              "description": "Pushing two forms with the same id produces a React duplicate-key warning in FormStackRenderer and Breadcrumbs (both key by entry.id). The fix adds a development-mode console.warn in openForm when an id already present on the stack is pushed again.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S1",
+                  "title": "Add dev-mode duplicate ID warning in FormStackProvider.openForm",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "prd_selectors": ["h2.3", "h3.3", "h2.4", "h2.0"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/002_32eb66cd705d/bugfix/001_f635210a7f29/architecture/issue_analysis.md §Issue 4. The openForm function in FormStackProvider (src/components/FormStackProvider.tsx, around line 100) currently has a useCallback dependency array of [] (empty — it does not read state.stack). Adding a dev-mode duplicate-ID check requires reading state.stack, so the dependency array must include state.stack. This changes openForm's reference stability: it will now be a new reference whenever the stack changes. This is acceptable because openForm is called imperatively (onClick handlers), not used as a useEffect dependency. The existing dev-mode guard pattern (checking process.env?.NODE_ENV === 'development') is used elsewhere in this file (closeForm warning, popToIndex RangeError, viewport mount warnings).\n2. INPUT: No inputs from other subtasks. The state.stack is InternalStackEntry<unknown>[] available in the FormStackProvider closure.\n3. LOGIC: At the beginning of the openForm useCallback body, before dispatch({ type: 'PUSH_FORM', ... }), add:\n   ```ts\n   if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {\n     if (state.stack.some((e) => e.id === options.id)) {\n       console.warn(\n         `[FormStack] Duplicate form id \"${options.id}\" detected. ` +\n         'Form IDs should be unique on the stack to avoid React key collisions ' +\n         'in FormStackRenderer and Breadcrumbs (PRD §5.2: \"Unique identifier for this form instance\").'\n       );\n     }\n   }\n   ```\n   Update the useCallback dependency array from [] to [state.stack].\n   Write a failing test: use vi.stubEnv('NODE_ENV', 'development') (and vi.stubGlobal if needed), spy on console.warn, open a form with id 'dup', open another with id 'dup', assert console.warn was called with a message containing 'Duplicate form id'. Then open a form with a unique id and assert no additional warning.\n4. OUTPUT: openForm emits a console.warn in development mode when a duplicate id is pushed. No runtime behavior change (the form still pushes; uniqueness is a documented consumer responsibility). Production is unaffected.\n5. DOCS: [Mode A] Add a note to the OpenFormOptions.id JSDoc in src/types/stack.ts clarifying that duplicate IDs produce a development-mode warning and can cause React key collisions."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M3",
+          "title": "Changeset-Level Documentation Sync",
+          "status": "Planned",
+          "description": "Cross-cutting documentation updates that only make sense once all four fixes are in place. Per §5 Mode B, this final task sweeps README.md and overview docs to prevent documentation drift. Per-feature JSDoc updates (Mode A) have already ridden with each implementing subtask.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M3.T1",
+              "title": "Sync changeset-level documentation (README.md + overview docs)",
+              "status": "Planned",
+              "description": "Update README.md to reflect the corrected onError behavior (now routed to error boundary, not rejecting), the sanitized FormStackViewportValue type, and the new duplicate-ID warning. These are cross-cutting changes that summarize the entire delta.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S1",
+                  "title": "Update README.md error handling, FormStackViewportValue, and error boundary sections",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T1.S1", "P1.M1.T1.S2", "P1.M1.T2.S1", "P1.M2.T1.S1", "P1.M2.T1.S2", "P1.M2.T2.S1"],
+                  "prd_selectors": ["h2.0", "h2.2", "h2.3", "h2.4"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/002_32eb66cd705d/bugfix/001_f635210a7f29/architecture/system_context.md §Documentation Targets. README.md has sections at: Error Boundaries (~line 737), FormStackViewportValue (~line 603), FormErrorBoundary (~line 245), FormProps (~line 496), and Hostable Viewport (~line 791). All four fixes have documentation implications.\n2. INPUT: All four issues are now fixed. The specific changes to document:\n   - Issue 1: onError now surfaces to FormErrorBoundary (Retry/Dismiss) instead of rejecting openForm() and popping. The README 'Error Boundaries' section currently says 'onError is called when the error boundary catches an error' which is incorrect — onError is called BY the form component and routed TO the boundary.\n   - Issue 2: No user-facing behavior change (internal re-entrancy fix) — but the confirmation dialog now correctly handles concurrent requests.\n   - Issue 3: FormStackViewportValue.stack is now readonly StackEntry[] (no component/deferred). The README type definition block must be updated.\n   - Issue 4: Duplicate IDs now produce a dev-mode warning.\n3. LOGIC:\n   a) README.md 'Error Boundaries' section (~line 737): Correct the onError description. Change from 'onError is called when the error boundary catches an error' to explain that a form calls its injected onError prop to signal an error, which is routed to the surrounding FormErrorBoundary showing Retry/Dismiss UI — the stack is not mutated and openForm() does not reject (PRD §9).\n   b) README.md 'FormStackViewportValue' section (~line 603): Update the type definition code block to show the sanitized interface (stack: readonly StackEntry[], onClose: () => void). Remove the InternalStackEntry note and onCancelRequest from the public type. Add a note that the public hook returns only id/label entries.\n   c) README.md 'FormErrorBoundary' section (~line 245): Add showError(error) to the documented public methods/props if the README lists them. Update the props table or add a methods section.\n   d) README.md OpenFormOptions section or 'Common Pitfalls': Add a note about duplicate IDs producing a development-mode warning.\n4. OUTPUT: README.md accurately reflects all four fixes. No stale documentation about onError rejecting, InternalStackEntry leaking, or missing duplicate-ID guard.\n5. DOCS: This IS the documentation task — no further docs action needed within this subtask."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S2",
+                  "title": "Update src/index.ts export comments and verify dist build consistency",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T1.S1"],
+                  "prd_selectors": ["h2.0", "h2.4"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: src/index.ts is the package entry point with JSDoc comments on every export. The FormStackViewportValue export comment (~line 603 of README mirrors this) must align with the sanitized type. The dist/ is built via tsup and should be rebuilt after all changes to verify the published types are correct.\n2. INPUT: All fixes are complete (P1.M1.*, P1.M2.*, P1.M3.T1.S1). The source-level JSDoc updates (Mode A) from each implementing subtask are in place.\n3. LOGIC:\n   a) Review src/index.ts export JSDoc comments for FormStackViewportValue — update the comment to reflect the sanitized stack: readonly StackEntry[] type.\n   b) Review src/index.ts export JSDoc for FormProps — ensure onError is documented as routing to the error boundary (not rejecting openForm).\n   c) Run `npx tsc --noEmit` — must exit 0.\n   d) Run `npx vitest run` — all tests must pass (previous 294 + new tests from each fix).\n   e) Run `npm run build` (tsup) — verify dist/index.d.ts reflects the new types (FormStackViewportValue.stack as StackEntry[], no InternalStackEntry in public types, FormErrorBoundary.showError in dist).\n4. OUTPUT: Source comments are consistent with the implementation. dist/ is rebuilt and reflects all fixes. Full type-check + test suite + build pass cleanly.\n5. DOCS: This IS the verification/documentation task — no further action needed."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
