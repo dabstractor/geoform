@@ -10,6 +10,7 @@ export type {
   FormStackActions,
   FormStackAction,
   FormStackReducerState,
+  FormStackViewportValue,
 } from './context';
 
 // URL Sync types

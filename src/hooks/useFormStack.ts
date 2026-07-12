@@ -94,6 +94,20 @@ export interface UseFormStackReturn {
    * ```
    */
   closeForm: () => void;
+  /**
+   * Cancels the top form on the stack through the proper lifecycle
+   * (confirmation when `confirmOnCancel`, then promise resolution).
+   *
+   * This is the action a host window (e.g. a single shared modal hosting
+   * `<FormStackViewport/>`) should wire to Escape / backdrop / a host-level
+   * close button. It resolves the top form's deferred with `undefined`, so the
+   * parent's `await openForm()` resolves with `undefined`.
+   *
+   * No-op when the stack is empty.
+   *
+   * @see {@link FormStackViewport} - Placeable viewport for a host window
+   */
+  cancelForm: () => Promise<void>;
 }
 
 /**
@@ -141,7 +155,7 @@ export interface UseFormStackReturn {
  */
 export function useFormStack(): UseFormStackReturn {
   const { stack } = useFormStackState();
-  const { openForm, closeForm } = useFormStackActions();
+  const { openForm, closeForm, cancelForm } = useFormStackActions();
 
-  return { stack, openForm, closeForm };
+  return { stack, openForm, closeForm, cancelForm };
 }

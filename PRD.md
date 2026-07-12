@@ -74,6 +74,20 @@ Responsibilities:
 * Manages cancellation confirmation
 * Provides error boundaries
 
+#### `autoRender` (default `true`)
+
+```tsx
+<FormStackProvider autoRender={false}>  // host the viewport yourself
+  {app}
+</FormStackProvider>
+```
+
+* `true` (default): provider renders the form-stack viewport itself, as a sibling of `children` (v1 behavior; zero migration).
+* `false`: provider renders **no** viewport — it still provides state/actions context and still renders the `<ConfirmationDialog/>`. The consumer renders `<FormStackViewport/>` wherever it wants the stacked bodies (e.g. inside one shared modal).
+* Dev-mode guard: logs a warning when `autoRender={false}`, a form is open, and no `<FormStackViewport/>` has mounted.
+
+See §10.1 for the single-shared-modal pattern.
+
 ---
 
 ### 5.2 `useFormStack()`
@@ -113,7 +127,28 @@ No registry.
 closeForm()
 ```
 
-Closes the current form without returning data (internal use only).
+Closes the current form without returning data (internal use only). Bypasses
+the promise resolution pattern — see §8.
+
+#### `cancelForm`
+
+```ts
+cancelForm(): Promise<void>
+```
+
+Cancels the top form through the proper lifecycle: confirmation (when
+`confirmOnCancel`), then resolves its deferred with `undefined` and pops it —
+so the parent's `await openForm()` resolves `undefined`. No-op on an empty
+stack. This is the action a host window (§10.1) should wire to Escape /
+backdrop / a host-level close button.
+
+#### `popToIndex`
+
+```ts
+popToIndex(index: number): void
+```
+
+Navigates to a form by index, cancelling all deeper forms (used by `<Breadcrumbs/>`).
 
 ---
 
@@ -193,9 +228,52 @@ Rules:
 ## 10. Rendering Behavior
 
 * Only the top form is visible
-* Parent forms remain mounted but hidden
+* Parent forms remain mounted but hidden (`display: none`)
 * No portals required
 * Transitions optional and provider-owned
+* The renderer (`<FormStackRenderer/>`) is deliberately **chrome-less**: it renders
+  the stacked form *bodies* only and injects `onSubmit`/`onCancel`/`onError`. It
+  intentionally imposes no window.
+
+### 10.1 Consumer-Hosted Viewport (Single Shared Modal)
+
+The window chrome — one shared modal, its breadcrumb header, its body slot — is
+the **consumer's** job. Two exports make the chrome-less renderer placeable
+through the public API (no internal-type leakage):
+
+* `<FormStackViewport/>` — a zero-prop component that renders the stacked bodies
+  (top visible, parents mounted-hidden) wherever it is placed. Reads the stack
+  from context. Renders nothing when the stack is empty.
+* `useFormStackViewport()` — low-level hook returning the renderer props
+  (`FormStackViewportValue`, assignable to `FormStackRendererProps`), or `null`
+  when empty. For consumers who wrap or forward custom props to
+  `<FormStackRenderer/>`.
+
+Target UX: one modal hosts the entire stack. Opening a child replaces the
+visible body (parent kept mounted, state preserved); the header becomes
+breadcrumbs; a host-level close/Escape/backdrop calls `cancelForm()`. Nesting is
+unbounded (N deep).
+
+```tsx
+<FormStackProvider autoRender={false}>
+  <SharedModalHost />
+</FormStackProvider>
+
+function SharedModalHost() {
+  const { stack } = useFormStackState();
+  const { cancelForm } = useFormStackActions();
+  return (
+    <Dialog open={stack.length > 0} onClose={cancelForm}>
+      <DialogTitle><Breadcrumbs /></DialogTitle>
+      <DialogContent><FormStackViewport /></DialogContent>
+    </Dialog>
+  );
+}
+```
+
+Guarantees: with `autoRender={false}` and exactly one `<FormStackViewport/>`, an
+open form renders exactly once; the promise contract of `openForm()` is
+unchanged, so callers like `ExpandingAutocomplete` need no edits.
 
 ---
 
@@ -263,4 +341,28 @@ No knowledge of:
 * Cross-tab recovery
 * Performance constraints
 * Schema-aware helpers
+
+---
+
+## 16. Changelog
+
+### 0.2.0 — Hostable viewport (single shared modal)
+
+Additive, fully backwards-compatible public API (defaults preserve 0.1.1
+behavior exactly). Enables a consumer to host the entire form stack inside one
+shared window (e.g. an MUI `<Dialog>`) instead of each form opening its own.
+
+* `FormStackProvider` gains `autoRender?: boolean` (default `true`).
+* New `<FormStackViewport/>` zero-prop component — the placeable viewport.
+* New `useFormStackViewport()` hook + `FormStackViewportValue` type (mirrors
+  `FormStackRendererProps`; no internal-type leakage).
+* New `cancelForm(): Promise<void>` action (cancel the top form through
+  confirmation + promise resolution) on `useFormStackActions()` and
+  `useFormStack()`.
+* Dev-mode guard warns on a forgotten host (`autoRender={false}` + open form +
+  no mounted `<FormStackViewport/>`).
+
+Non-goals reaffirmed: geoform stays chrome-less (no built-in window); the
+`FormProps` contract, `openForm()`'s promise semantics, and
+`FormStackRenderer`'s existing signature are unchanged.
 

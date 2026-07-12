@@ -106,6 +106,30 @@ export { FormStackRenderer } from './components';
 export type { FormStackRendererProps } from './components';
 
 /**
+ * Placeable, zero-prop viewport that renders the stacked form bodies (top
+ * visible, parents mounted-but-hidden) wherever it is placed. Reads the stack
+ * from context, so it requires no props. Pair with
+ * `<FormStackProvider autoRender={false}>` to host the form stack inside your
+ * own window chrome (e.g. a single shared `<Dialog>`). Renders nothing when the
+ * stack is empty.
+ *
+ * @see {@link FormStackProvider} - Set `autoRender={false}` to host this yourself
+ * @see {@link useFormStackViewport} - Low-level hook alternative
+ *
+ * @example
+ * ```tsx
+ * import { FormStackProvider, FormStackViewport } from 'geoform';
+ *
+ * <FormStackProvider autoRender={false}>
+ *   <MySharedModal>
+ *     <FormStackViewport />
+ *   </MySharedModal>
+ * </FormStackProvider>
+ * ```
+ */
+export { FormStackViewport } from './components';
+
+/**
  * Breadcrumbs component for displaying form stack navigation.
  * Clicking a breadcrumb navigates to that form, cancelling all deeper forms.
  *
@@ -282,6 +306,17 @@ export type { UseFormStackReturn } from './hooks';
 export { useFormStackURLSync } from './hooks';
 
 /**
+ * Returns the props required by `<FormStackRenderer/>` (internal stack,
+ * `onClose`, `onCancelRequest`), or `null` when the stack is empty. For
+ * consumers who want to forward custom props to `<FormStackRenderer/>` or wrap
+ * it. Most consumers should use `<FormStackViewport/>` instead.
+ *
+ * @see {@link FormStackViewport} - The recommended, no-prop component form
+ * @see {@link FormStackRenderer} - The low-level renderer this powers
+ */
+export { useFormStackViewport } from './hooks';
+
+/**
  * Options for useFormStackURLSync hook.
  */
 export type { UseFormStackURLSyncOptions } from './hooks';
@@ -360,3 +395,13 @@ export type { FormStackState } from './types';
  * @see {@link FormStackState} - State counterpart
  */
 export type { FormStackActions } from './types';
+
+/**
+ * Props required to render the form-stack viewport via `<FormStackRenderer/>`,
+ * returned by `useFormStackViewport()` (or `null` when the stack is empty).
+ * Structurally identical to `FormStackRendererProps`.
+ *
+ * @see {@link useFormStackViewport} - Hook that returns this type
+ * @see {@link FormStackViewport} - Component that consumes this value
+ */
+export type { FormStackViewportValue } from './types';

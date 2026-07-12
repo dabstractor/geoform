@@ -1,7 +1,12 @@
-import { useReducer, useMemo, useCallback, useState, type ReactNode } from 'react';
+import { useReducer, useMemo, useCallback, useState, useEffect, useRef, type ReactNode } from 'react';
 import { formStackReducer, initialFormStackState } from '../context/formStackReducer';
-import { FormStackStateContext, FormStackActionsContext } from '../context/FormStackContext';
-import { FormStackRenderer } from './FormStackRenderer';
+import {
+  FormStackStateContext,
+  FormStackActionsContext,
+  FormStackViewportContext,
+  FormStackViewportMountContext,
+} from '../context/FormStackContext';
+import { FormStackViewport } from './FormStackViewport';
 import { ConfirmationDialog } from './ConfirmationDialog';
 import { createDeferredPromise } from '../utils';
 import type { FormStackState, FormStackActions, OpenFormOptions, InternalStackEntry } from '../types';
@@ -27,6 +32,22 @@ export interface FormStackProviderProps {
    * All children can use useFormStack, useFormStackState, or useFormStackActions.
    */
   children: ReactNode;
+  /**
+   * Whether the provider renders the form-stack viewport itself (as a sibling
+   * of `children`). Defaults to `true` (current behavior).
+   *
+   * Set to `false` to host the viewport yourself — e.g. inside a single shared
+   * modal — by rendering `<FormStackViewport/>` where you want the stacked form
+   * bodies to appear.
+   *
+   * The cancel-confirmation `<ConfirmationDialog/>` is always rendered
+   * regardless of this setting; only the form viewport is affected.
+   *
+   * @default true
+   *
+   * @see {@link FormStackViewport} - Placeable viewport for a host window
+   */
+  autoRender?: boolean;
 }
 
 /**
@@ -56,9 +77,12 @@ export interface FormStackProviderProps {
  * }
  * ```
  */
-export function FormStackProvider({ children }: FormStackProviderProps) {
+export function FormStackProvider({ children, autoRender = true }: FormStackProviderProps) {
   const [state, dispatch] = useReducer(formStackReducer, initialFormStackState);
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
+  // Tracks whether a <FormStackViewport/> is currently mounted (for the
+  // dev-mode "forgotten host" warning when autoRender={false}).
+  const [viewportMounted, setViewportMounted] = useState(false);
 
   // Request confirmation from user - returns Promise that resolves when user responds
   const requestConfirmation = useCallback((affectedForms: string[]): Promise<boolean> => {
@@ -180,6 +204,21 @@ export function FormStackProvider({ children }: FormStackProviderProps) {
     return true; // No confirmation needed
   }, [requestConfirmation]);
 
+  /**
+   * Cancels the top form through the proper lifecycle: confirmation (when
+   * `confirmOnCancel`) then promise resolution, so a host modal can wire
+   * Escape/backdrop/close to "cancel the top form" without bypassing either.
+   * No-op when the stack is empty.
+   */
+  const cancelForm = useCallback(async () => {
+    const top = state.stack[state.stack.length - 1];
+    if (!top) return;
+    const confirmed = await handleCancelRequest(top);
+    if (!confirmed) return;
+    top.deferred.resolve(undefined);
+    dispatch({ type: 'POP_FORM' });
+  }, [state.stack, handleCancelRequest]);
+
   // Confirmation dialog handlers
   const handleConfirmationConfirm = useCallback(() => {
     if (pendingConfirmation) {
@@ -200,28 +239,69 @@ export function FormStackProvider({ children }: FormStackProviderProps) {
     openForm,
     closeForm,
     popToIndex,
-  }), [openForm, closeForm, popToIndex]);
+    cancelForm,
+  }), [openForm, closeForm, popToIndex, cancelForm]);
+
+  // Viewport context value. Null when the stack is empty (or outside a
+  // provider) so <FormStackViewport/> and useFormStackViewport() render/return
+  // nothing. Structurally identical to FormStackRendererProps.
+  const viewportValue = useMemo(
+    () =>
+      state.stack.length === 0
+        ? null
+        : {
+            stack: state.stack,
+            onClose: closeForm,
+            onCancelRequest: handleCancelRequest,
+          },
+    [state.stack, closeForm, handleCancelRequest],
+  );
+
+  // Dev-mode guard: warn when autoRender={false} and a form is open but no
+  // <FormStackViewport/> has mounted (a forgotten host). Fires at most once per
+  // "forgotten" episode and resets once a viewport mounts or the stack clears.
+  const warnedForgottenHostRef = useRef(false);
+  useEffect(() => {
+    const forgotten = !autoRender && state.stack.length > 0 && !viewportMounted;
+    if (forgotten) {
+      if (
+        !warnedForgottenHostRef.current &&
+        typeof process !== 'undefined' &&
+        process.env?.NODE_ENV === 'development'
+      ) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          '[FormStackProvider] autoRender is false and a form is open, but no ' +
+            '<FormStackViewport/> is mounted. Render <FormStackViewport/> inside ' +
+            'your host (e.g. your shared modal) so the form is visible.'
+        );
+        warnedForgottenHostRef.current = true;
+      }
+    } else {
+      warnedForgottenHostRef.current = false;
+    }
+  }, [autoRender, state.stack.length, viewportMounted]);
 
   return (
     <FormStackStateContext.Provider value={stateValue}>
       <FormStackActionsContext.Provider value={actionsValue}>
-        {children}
-        <FormStackRenderer
-          stack={state.stack}
-          onClose={closeForm}
-          onCancelRequest={handleCancelRequest}
-        />
-        <ConfirmationDialog
-          isOpen={pendingConfirmation !== null}
-          title={
-            pendingConfirmation && pendingConfirmation.affectedForms.length > 1
-              ? `Discard Changes to ${pendingConfirmation.affectedForms.length} Forms?`
-              : 'Discard Changes?'
-          }
-          message="Your unsaved changes will be lost."
-          onConfirm={handleConfirmationConfirm}
-          onCancel={handleConfirmationCancel}
-        />
+        <FormStackViewportContext.Provider value={viewportValue}>
+          <FormStackViewportMountContext.Provider value={setViewportMounted}>
+            {children}
+            {autoRender && <FormStackViewport />}
+            <ConfirmationDialog
+              isOpen={pendingConfirmation !== null}
+              title={
+                pendingConfirmation && pendingConfirmation.affectedForms.length > 1
+                  ? `Discard Changes to ${pendingConfirmation.affectedForms.length} Forms?`
+                  : 'Discard Changes?'
+              }
+              message="Your unsaved changes will be lost."
+              onConfirm={handleConfirmationConfirm}
+              onCancel={handleConfirmationCancel}
+            />
+          </FormStackViewportMountContext.Provider>
+        </FormStackViewportContext.Provider>
       </FormStackActionsContext.Provider>
     </FormStackStateContext.Provider>
   );

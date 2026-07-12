@@ -13,11 +13,13 @@ describe('Breadcrumbs', () => {
   const mockPopToIndex = vi.fn();
   const mockOpenForm = vi.fn();
   const mockCloseForm = vi.fn();
+  const mockCancelForm = vi.fn();
 
   const mockActions: FormStackActions = {
     openForm: mockOpenForm,
     closeForm: mockCloseForm,
     popToIndex: mockPopToIndex,
+    cancelForm: mockCancelForm,
   };
 
   beforeEach(() => {

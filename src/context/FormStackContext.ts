@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { FormStackState, FormStackActions } from '../types';
+import type { FormStackState, FormStackActions, FormStackViewportValue } from '../types';
 
 /**
  * Context for reading form stack state.
@@ -16,3 +16,28 @@ FormStackStateContext.displayName = 'FormStackStateContext';
  */
 export const FormStackActionsContext = createContext<FormStackActions | null>(null);
 FormStackActionsContext.displayName = 'FormStackActionsContext';
+
+/**
+ * Carries the props required by {@link FormStackRenderer} (internal stack,
+ * `onClose`, `onCancelRequest`) so a consumer-placed {@link FormStackViewport}
+ * can render the stacked form bodies without exposing `InternalStackEntry`.
+ *
+ * The provider sets this to `null` when the stack is empty (and it is `null`
+ * outside any provider), so {@link FormStackViewport} and
+ * {@link useFormStackViewport} render/return nothing in those cases.
+ */
+export const FormStackViewportContext = createContext<FormStackViewportValue | null>(null);
+FormStackViewportContext.displayName = 'FormStackViewportContext';
+
+/**
+ * Mount-tracking channel used only by {@link FormStackViewport} to register
+ * itself with the provider. This powers the dev-mode "forgotten host" warning:
+ * when `autoRender={false}` and a form is open but no viewport has mounted,
+ * the provider logs a warning so an omitted host is obvious.
+ *
+ * @internal
+ */
+export const FormStackViewportMountContext = createContext<(mounted: boolean) => void>(
+  () => {},
+);
+FormStackViewportMountContext.displayName = 'FormStackViewportMountContext';
