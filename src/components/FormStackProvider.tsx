@@ -15,10 +15,10 @@ import type { FormStackState, FormStackActions, OpenFormOptions, InternalStackEn
  * State for a pending confirmation dialog.
  */
 interface PendingConfirmation {
-  /** Form names/IDs that would be cancelled */
+  /** Form names/IDs that would be cancelled (merged across concurrent requests) */
   affectedForms: string[];
-  /** Callback when user responds */
-  resolve: (confirmed: boolean) => void;
+  /** All concurrent waiters — resolved together when the user responds */
+  resolvers: Set<(confirmed: boolean) => void>;
 }
 
 /**
@@ -88,10 +88,23 @@ export function FormStackProvider({ children, autoRender = true }: FormStackProv
     setViewportMountCount((prev) => Math.max(0, prev + delta));
   }, []);
 
-  // Request confirmation from user - returns Promise that resolves when user responds
+  // Request confirmation from user - returns Promise that resolves when user responds.
+  // Coalesces concurrent requests: a second call while a dialog is open merges
+  // its resolver (and affected forms) into the existing pending confirmation so
+  // every waiter settles on a single user response (Issue 2 fix).
   const requestConfirmation = useCallback((affectedForms: string[]): Promise<boolean> => {
     return new Promise((resolve) => {
-      setPendingConfirmation({ affectedForms, resolve });
+      setPendingConfirmation((prev) => {
+        if (prev) {
+          // Coalesce: merge into the existing pending confirmation so all
+          // concurrent waiters are resolved together (Issue 2 fix).
+          return {
+            affectedForms: [...new Set([...prev.affectedForms, ...affectedForms])],
+            resolvers: new Set([...prev.resolvers, resolve]),
+          };
+        }
+        return { affectedForms, resolvers: new Set([resolve]) };
+      });
     });
   }, []);
 
@@ -231,20 +244,23 @@ export function FormStackProvider({ children, autoRender = true }: FormStackProv
     dispatch({ type: 'POP_FORM' });
   }, [state.stack, handleCancelRequest]);
 
-  // Confirmation dialog handlers
+  // Confirmation dialog handlers. Resolve ALL coalesced waiters inside the
+  // functional setState updater (reads the current `prev`, defeats stale
+  // closures) and clear the slot atomically by returning null. The handlers
+  // read nothing from closure, so deps are [] — they are stable.
   const handleConfirmationConfirm = useCallback(() => {
-    if (pendingConfirmation) {
-      pendingConfirmation.resolve(true);
-      setPendingConfirmation(null);
-    }
-  }, [pendingConfirmation]);
+    setPendingConfirmation((prev) => {
+      prev?.resolvers.forEach((resolver) => resolver(true));
+      return null;
+    });
+  }, []);
 
   const handleConfirmationCancel = useCallback(() => {
-    if (pendingConfirmation) {
-      pendingConfirmation.resolve(false);
-      setPendingConfirmation(null);
-    }
-  }, [pendingConfirmation]);
+    setPendingConfirmation((prev) => {
+      prev?.resolvers.forEach((resolver) => resolver(false));
+      return null;
+    });
+  }, []);
 
   // Memoize actions value to prevent re-renders
   const actionsValue = useMemo<FormStackActions>(() => ({
