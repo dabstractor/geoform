@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { FormStackProvider } from '../FormStackProvider';
 import { useFormStack } from '../../hooks/useFormStack';
@@ -41,12 +41,13 @@ describe('FormStackProvider - popToIndex error handling', () => {
       }
     });
 
-    it('should throw RangeError for negative index', async () => {
+    it('should throw RangeError for negative index less than -1', async () => {
       // Arrange
       const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
 
-      // Act & Assert - use rejects.toThrow for async function
-      await expect(result.current.popToIndex(-1)).rejects.toThrow(RangeError);
+      // Act & Assert - `index === -1` is a valid "close all" sentinel,
+      // so use `-2` to exercise the genuinely-invalid negative path.
+      await expect(result.current.popToIndex(-2)).rejects.toThrow(RangeError);
     });
 
     it('should throw RangeError for out-of-bounds index', async () => {
@@ -115,6 +116,76 @@ describe('FormStackProvider - popToIndex error handling', () => {
       // Assert - stack remains unchanged
       expect(result.current.stack.length).toBe(originalStackLength);
     });
+  });
+});
+
+// `popToIndex(-1)` is the "close all forms" sentinel used by the URL-sync
+// popstate handler (PRD §11 back/forward). These guard the BUG-1 fix.
+describe('FormStackProvider - popToIndex(-1) closes all forms', () => {
+  const originalError = console.error;
+
+  beforeEach(() => {
+    console.error = vi.fn();
+  });
+
+  afterEach(() => {
+    console.error = originalError;
+    vi.unstubAllEnvs();
+    if (process?.env) process.env.NODE_ENV = 'test';
+  });
+
+  it('clears the entire stack in production mode', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    if (process?.env) process.env.NODE_ENV = 'production';
+
+    const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+
+    act(() => {
+      result.current.openForm({ id: 'form-1', component: () => null });
+      result.current.openForm({ id: 'form-2', component: () => null });
+      result.current.openForm({ id: 'form-3', component: () => null });
+    });
+
+    // Sanity: stack has 3 forms
+    expect(result.current.stack).toHaveLength(3);
+
+    await act(async () => {
+      await result.current.popToIndex(-1);
+    });
+
+    expect(result.current.stack).toHaveLength(0);
+  });
+
+  it('clears the entire stack in development mode without throwing', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    if (process?.env) process.env.NODE_ENV = 'development';
+
+    const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+
+    act(() => {
+      result.current.openForm({ id: 'form-1', component: () => null });
+      result.current.openForm({ id: 'form-2', component: () => null });
+    });
+
+    expect(result.current.stack).toHaveLength(2);
+
+    await act(async () => {
+      await expect(result.current.popToIndex(-1)).resolves.toBeUndefined();
+    });
+    expect(result.current.stack).toHaveLength(0);
+  });
+
+  it('is a no-op on an empty stack', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    if (process?.env) process.env.NODE_ENV = 'production';
+
+    const { result } = renderHook(() => useFormStackWithActions(), { wrapper });
+
+    expect(result.current.stack).toHaveLength(0);
+    await act(async () => {
+      await expect(result.current.popToIndex(-1)).resolves.toBeUndefined();
+    });
+    expect(result.current.stack).toHaveLength(0);
   });
 });
 

@@ -286,6 +286,84 @@ describe('FormStackProvider autoRender', () => {
       expect(forgottenWarnings).toHaveLength(1);
     });
   });
+
+  // ---- Dev-mode "duplicate viewport" guard (ISSUE-3) ---------------------
+
+  describe('dev-mode duplicate-viewport guard', () => {
+    let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      vi.stubEnv('NODE_ENV', 'development');
+      if (process?.env) {
+        process.env.NODE_ENV = 'development';
+      }
+      consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      if (process?.env) {
+        process.env.NODE_ENV = 'test';
+      }
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('warns when more than one <FormStackViewport/> is mounted', async () => {
+      render(
+        <FormStackProvider autoRender={false}>
+          <Opener />
+          {/* Two viewports: PRD §10.1 requires exactly one. */}
+          <FormStackViewport />
+          <FormStackViewport />
+        </FormStackProvider>,
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('open'));
+      });
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('2 <FormStackViewport/>'),
+      );
+    });
+
+    it('does not warn when exactly one viewport is mounted', async () => {
+      render(
+        <FormStackProvider autoRender={false}>
+          <Opener />
+          <FormStackViewport />
+        </FormStackProvider>,
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('open'));
+      });
+
+      const duplicateWarnings = consoleWarnSpy.mock.calls.filter((c) =>
+        String(c[0]).includes('<FormStackViewport/> components are mounted at once'),
+      );
+      expect(duplicateWarnings).toHaveLength(0);
+    });
+
+    it('warns at most once per duplicate episode', async () => {
+      render(
+        <FormStackProvider autoRender={false}>
+          <OpenerButton id="f1" />
+          <FormStackViewport />
+          <FormStackViewport />
+        </FormStackProvider>,
+      );
+
+      await act(async () => {
+        fireEvent.click(screen.getByText('open f1'));
+      });
+
+      const duplicateWarnings = consoleWarnSpy.mock.calls.filter((c) =>
+        String(c[0]).includes('<FormStackViewport/> components are mounted at once'),
+      );
+      expect(duplicateWarnings).toHaveLength(1);
+    });
+  });
 });
 
 // Separate opener that allows a custom button label (for stacking two openers).

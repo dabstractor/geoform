@@ -31,13 +31,19 @@ FormStackViewportContext.displayName = 'FormStackViewportContext';
 
 /**
  * Mount-tracking channel used only by {@link FormStackViewport} to register
- * itself with the provider. This powers the dev-mode "forgotten host" warning:
- * when `autoRender={false}` and a form is open but no viewport has mounted,
- * the provider logs a warning so an omitted host is obvious.
+ * itself with the provider. This powers the dev-mode diagnostics:
+ *   - "forgotten host" warning: `autoRender={false}`, a form is open, but no
+ *     viewport has mounted (count === 0).
+ *   - "duplicate viewport" warning: more than one `<FormStackViewport/>` is
+ *     mounted at once (count > 1), which renders the same form body multiple
+ *     times.
+ *
+ * The callback receives a mount delta (`+1` on mount, `-1` on unmount) so the
+ * provider can maintain an accurate count.
  *
  * @internal
  */
-export const FormStackViewportMountContext = createContext<(mounted: boolean) => void>(
+export const FormStackViewportMountContext = createContext<(delta: number) => void>(
   () => {},
 );
 FormStackViewportMountContext.displayName = 'FormStackViewportMountContext';

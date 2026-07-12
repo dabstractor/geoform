@@ -35,7 +35,11 @@ export function formStackReducer(
       };
 
     case 'POP_TO_INDEX':
-      if (action.index < 0 || action.index >= state.stack.length) {
+      // `index === -1` is a valid sentinel meaning "keep zero forms" (clear
+      // the entire stack). It is used by the URL-sync popstate handler when the
+      // browser navigates back to a no-forms URL state. Indices < -1 are still
+      // invalid and leave state unchanged.
+      if (action.index < -1 || action.index >= state.stack.length) {
         return state;
       }
       return {

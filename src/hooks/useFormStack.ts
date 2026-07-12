@@ -103,7 +103,11 @@ export interface UseFormStackReturn {
    * development an out-of-range index throws a `RangeError`; in production it
    * is a no-op.
    *
-   * @param index - Zero-based index of the target form
+   * The special value `-1` means "close all forms" (keep zero forms); used
+   * internally by URL-sync back navigation and available for programmatic
+   * "close everything" actions.
+   *
+   * @param index - Zero-based index of the target form, or `-1` to close all
    * @see {@link Breadcrumbs} - Component that calls this on breadcrumb clicks
    */
   popToIndex: (index: number) => void;

@@ -80,9 +80,13 @@ export interface FormStackProviderProps {
 export function FormStackProvider({ children, autoRender = true }: FormStackProviderProps) {
   const [state, dispatch] = useReducer(formStackReducer, initialFormStackState);
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
-  // Tracks whether a <FormStackViewport/> is currently mounted (for the
-  // dev-mode "forgotten host" warning when autoRender={false}).
-  const [viewportMounted, setViewportMounted] = useState(false);
+  // Tracks how many <FormStackViewport/> are currently mounted (for the
+  // dev-mode "forgotten host" and "duplicate viewport" warnings when
+  // autoRender={false}). The mount channel sends a +1/-1 delta per mount.
+  const [viewportMountCount, setViewportMountCount] = useState(0);
+  const applyViewportMountDelta = useCallback((delta: number) => {
+    setViewportMountCount((prev) => Math.max(0, prev + delta));
+  }, []);
 
   // Request confirmation from user - returns Promise that resolves when user responds
   const requestConfirmation = useCallback((affectedForms: string[]): Promise<boolean> => {
@@ -126,17 +130,17 @@ export function FormStackProvider({ children, autoRender = true }: FormStackProv
       console.warn(
         'closeForm() was called directly. Most forms should use onSubmit/onCancel props instead. ' +
         'Use closeForm() only for programmatic closure from outside the form stack.\n\n' +
-        'Example (DISCOURAGED - direct call in form):\n' +
-        '  function MyForm({ closeForm }) {\n' +
+        'Example (DISCOURAGED - treating injected callbacks like legacy close helpers):\n' +
+        '  function MyForm({ onCancel }) {\n' +
         '    const handleSave = () => {\n' +
-        '      onSubmit(data);\n' +
-        '      closeForm(); // DON\'T DO THIS\n' +
+        '      // ...persist data, then call onCancel to close the form.\n' +
+        '      onCancel(); // DON\'T DO THIS - use onSubmit(data) so openForm() resolves with the value.\n' +
         '    };\n' +
         '  }\n\n' +
         'Example (RECOMMENDED - use onSubmit):\n' +
         '  function MyForm({ onSubmit }) {\n' +
         '    const handleSave = () => {\n' +
-        '      onSubmit(data); // FormStackRenderer handles closure\n' +
+        '      onSubmit(data); // FormStackRenderer handles closure and promise resolution.\n' +
         '    };\n' +
         '  }'
       );
@@ -149,26 +153,34 @@ export function FormStackProvider({ children, autoRender = true }: FormStackProv
    * All forms after the target index are cancelled (resolved with undefined).
    * Used by Breadcrumbs component for direct navigation.
    *
-   * @param index - Zero-based index of the target form. Must be >= 0 and < stack.length.
-   * @throws {RangeError} In development mode, when index is negative or >= stack.length.
+   * The special value `-1` means "close all forms" (keep zero forms). It is
+   * used by the URL-sync popstate handler when the browser back-button
+   * navigates to a history entry with no open forms.
+   *
+   * @param index - Zero-based index of the target form, or `-1` to close all.
+   *                Must be `>= -1` and `< stack.length`.
+   * @throws {RangeError} In development mode, when index is `< -1` or `>= stack.length`.
    *                      Production silently ignores invalid indices (graceful degradation).
    */
   const popToIndex = useCallback(async (index: number) => {
-    // Development-mode error throwing for debugging
+    // Development-mode error throwing for debugging.
+    // `index === -1` is a valid "close all" sentinel and is permitted even when
+    // the stack is empty (it becomes a no-op).
     if (typeof process !== "undefined" && process.env?.NODE_ENV === "development") {
-      if (index < 0 || index >= state.stack.length) {
+      if (index < -1 || index >= state.stack.length) {
         throw new RangeError(
           `popToIndex: Invalid index ${index}. Stack length is ${state.stack.length}.`
         );
       }
     }
 
-    // Validate index bounds
-    if (index < 0 || index >= state.stack.length) {
+    // Validate index bounds (`-1` is allowed and means "close all")
+    if (index < -1 || index >= state.stack.length) {
       return;
     }
 
-    // Get forms that will be cancelled
+    // Get forms that will be cancelled (everything after the target index;
+    // for `index === -1` that is the entire stack)
     const formsToCancel = state.stack.slice(index + 1);
 
     // Check if any require confirmation
@@ -260,15 +272,22 @@ export function FormStackProvider({ children, autoRender = true }: FormStackProv
   // Dev-mode guard: warn when autoRender={false} and a form is open but no
   // <FormStackViewport/> has mounted (a forgotten host). Fires at most once per
   // "forgotten" episode and resets once a viewport mounts or the stack clears.
+  // Also warns when more than one <FormStackViewport/> is mounted at once
+  // (each open form would render multiple times). Fires at most once per
+  // "duplicate" episode and resets when the count drops back to <= 1.
   const warnedForgottenHostRef = useRef(false);
+  const warnedDuplicateViewportRef = useRef(false);
   useEffect(() => {
-    const forgotten = !autoRender && state.stack.length > 0 && !viewportMounted;
+    if (
+      typeof process === 'undefined' ||
+      process.env?.NODE_ENV !== 'development'
+    ) {
+      return;
+    }
+
+    const forgotten = !autoRender && state.stack.length > 0 && viewportMountCount === 0;
     if (forgotten) {
-      if (
-        !warnedForgottenHostRef.current &&
-        typeof process !== 'undefined' &&
-        process.env?.NODE_ENV === 'development'
-      ) {
+      if (!warnedForgottenHostRef.current) {
         // eslint-disable-next-line no-console
         console.warn(
           '[FormStackProvider] autoRender is false and a form is open, but no ' +
@@ -280,13 +299,30 @@ export function FormStackProvider({ children, autoRender = true }: FormStackProv
     } else {
       warnedForgottenHostRef.current = false;
     }
-  }, [autoRender, state.stack.length, viewportMounted]);
+
+    const duplicate = viewportMountCount > 1;
+    if (duplicate) {
+      if (!warnedDuplicateViewportRef.current) {
+        // eslint-disable-next-line no-console
+        console.warn(
+          `[FormStackProvider] ${viewportMountCount} <FormStackViewport/> ` +
+            'components are mounted at once. PRD §10.1 requires exactly one. ' +
+            'Each open form renders once per viewport, so duplicates produce ' +
+            'redundant DOM, double event wiring, and an inconsistent React tree. ' +
+            'Remove the extra <FormStackViewport/>.'
+        );
+        warnedDuplicateViewportRef.current = true;
+      }
+    } else {
+      warnedDuplicateViewportRef.current = false;
+    }
+  }, [autoRender, state.stack.length, viewportMountCount]);
 
   return (
     <FormStackStateContext.Provider value={stateValue}>
       <FormStackActionsContext.Provider value={actionsValue}>
         <FormStackViewportContext.Provider value={viewportValue}>
-          <FormStackViewportMountContext.Provider value={setViewportMounted}>
+          <FormStackViewportMountContext.Provider value={applyViewportMountDelta}>
             {children}
             {autoRender && <FormStackViewport />}
             <ConfirmationDialog

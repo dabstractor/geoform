@@ -309,14 +309,26 @@ export function useFormStackURLSync(
       const currentIds = getStackIds();
 
       if (formIds.length < currentIds.length) {
-        // Forms were closed via back button - pop to the right index
+        // Forms were closed via back button - pop to the right index.
+        // `targetIndex === -1` (URL has no forms) means "close all forms";
+        // popToIndex treats -1 as a valid "clear all" sentinel.
         const targetIndex = formIds.length - 1;
-        if (targetIndex >= 0) {
-          popToIndex(targetIndex);
-        } else {
-          // All forms closed - pop all
-          popToIndex(-1);
-        }
+        // Guard against unhandled rejections: popToIndex is implemented async
+        // and may reject (e.g. RangeError in dev for truly invalid indices).
+        // The popstate handler is fire-and-forget, so normalize the return
+        // value through Promise.resolve (popToIndex's public type is `void`,
+        // but it returns a promise at runtime) and swallow errors to avoid
+        // unhandled promise rejections on browser navigation (BUG-2).
+        Promise.resolve(popToIndex(targetIndex)).catch((err: unknown) => {
+          if (
+            typeof console !== "undefined" &&
+            typeof process !== "undefined" &&
+            process.env?.NODE_ENV !== "production"
+          ) {
+            // eslint-disable-next-line no-console
+            console.warn("[useFormStackURLSync] popToIndex failed during popstate:", err);
+          }
+        });
       }
       // Note: Forward navigation (adding forms) would need form registry to work
 

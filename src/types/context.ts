@@ -77,7 +77,16 @@ export interface FormStackActions {
    * Navigates to a specific form in the stack by index.
    * All forms after the target index are cancelled (resolved with undefined).
    * Used by Breadcrumbs component for direct navigation.
-   * @param index - Zero-based index of the target form
+   *
+   * The special value `-1` means "close all forms" (keep zero forms). It is
+   * used internally by the URL-sync popstate handler when the browser
+   * back-button navigates to a history entry with no open forms, and may be
+   * used by consumers for a programmatic "close everything" action.
+   *
+   * @param index - Zero-based index of the target form, or `-1` to close all.
+   *                Must be `>= -1` and `< stack.length`.
+   * @throws {RangeError} In development mode, when index is `< -1` or `>= stack.length`.
+   *                      Production silently ignores invalid indices (graceful degradation).
    */
   popToIndex: (index: number) => void;
   /**

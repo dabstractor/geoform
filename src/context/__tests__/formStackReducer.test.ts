@@ -148,9 +148,22 @@ describe('formStackReducer', () => {
       expect(result.stack[1]!.id).toBe('form-2');
     });
 
-    it('should return unchanged state for negative index', () => {
+    it('should return unchanged state for negative index less than -1', () => {
       // Arrange
       const entries = [createMockEntry('form-1')];
+      const state: FormStackReducerState = { stack: entries };
+      const action: FormStackAction = { type: 'POP_TO_INDEX', index: -2 };
+
+      // Act
+      const result = formStackReducer(state, action);
+
+      // Assert
+      expect(result).toBe(state);
+    });
+
+    it('should clear the entire stack for index -1 (close all sentinel)', () => {
+      // Arrange
+      const entries = [createMockEntry('form-1'), createMockEntry('form-2')];
       const state: FormStackReducerState = { stack: entries };
       const action: FormStackAction = { type: 'POP_TO_INDEX', index: -1 };
 
@@ -158,7 +171,7 @@ describe('formStackReducer', () => {
       const result = formStackReducer(state, action);
 
       // Assert
-      expect(result).toBe(state);
+      expect(result.stack).toEqual([]);
     });
 
     it('should return unchanged state for out-of-bounds index', () => {

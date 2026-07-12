@@ -765,14 +765,19 @@ describe("useFormStackURLSync", () => {
 
       const initialPushStateCount = mockPushState.mock.calls.length;
 
-      // Simulate immediate browser back
+      // Simulate immediate browser back to a no-forms URL state.
+      // PRD §11: back navigation must close forms; back to ZERO forms must
+      // close ALL forms (regression guard for the popToIndex(-1) bug).
       act(() => {
         popstateHandler?.({ state: { forms: [] } } as PopStateEvent);
       });
 
-      // The key behavior to test is that popstate is handled without errors
-      // The actual form closing depends on complex timing and popToIndex behavior
-      // We verify that the popstate handler was registered and called
+      // The form must actually be closed - the stack must be empty.
+      await waitFor(() => {
+        expect(result.current.stack).toHaveLength(0);
+      });
+
+      // The popstate handler must not re-trigger a pushState (no history loop).
       expect(mockPushState.mock.calls.length).toBe(initialPushStateCount);
     });
 

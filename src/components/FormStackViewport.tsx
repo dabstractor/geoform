@@ -46,10 +46,11 @@ export function FormStackViewport(): ReactElement | null {
   const setMounted = useContext(FormStackViewportMountContext);
 
   // Register with the provider so it can warn (in dev) when autoRender={false}
-  // and a form is open but no viewport is mounted. Runs once per mount.
+  // and a form is open but no viewport is mounted, or when more than one
+  // viewport is mounted. Sends a +1/-1 delta. Runs once per mount.
   useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
+    setMounted(1);
+    return () => setMounted(-1);
   }, [setMounted]);
 
   // Nothing to render when outside a provider or when the stack is empty.
