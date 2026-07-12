@@ -460,6 +460,36 @@ function URLSyncedApp() {
 
 ---
 
+#### useFormStackViewport
+
+Low-level hook that returns the props required by `<FormStackRenderer/>` — the
+internal stack plus the `onClose`/`onCancelRequest` callbacks — or `null` when
+there is nothing to render. The returned value is assignable to
+`FormStackRendererProps`, so it can be spread directly onto the renderer.
+
+For consumers who want to forward custom props to `<FormStackRenderer/>` or wrap
+it, instead of mounting the zero-prop `<FormStackViewport/>` component. Most
+consumers should use `<FormStackViewport/>`.
+
+```tsx
+import { useFormStackViewport, FormStackRenderer } from 'geoform';
+
+function CustomHost() {
+  const viewport = useFormStackViewport();
+  if (!viewport) return null;
+  // viewport is assignable to FormStackRendererProps
+  return <FormStackRenderer {...viewport} />;
+}
+```
+
+**Returns:**
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `value` | `FormStackViewportValue \| null` | Renderer props (assignable to `FormStackRendererProps`), or `null` when the stack is empty or the hook is used outside a `<FormStackProvider>` |
+
+---
+
 ### Types
 
 #### FormProps\<T\>
@@ -566,6 +596,35 @@ interface FormStackActions {
   cancelForm: () => Promise<void>;
 }
 ```
+
+---
+
+#### FormStackViewportValue
+
+The renderer props returned by `useFormStackViewport()`. Structurally identical
+to `FormStackRendererProps`, so the value can be spread directly onto
+`<FormStackRenderer/>` without leaking internal types into the public API.
+Consumers should never need to construct this themselves — read it via
+`useFormStackViewport()` or let `<FormStackViewport/>` render it.
+
+**Definition:**
+
+```tsx
+interface FormStackViewportValue {
+  /** Internal stack entries to render (top visible, parents mounted-hidden) */
+  stack: InternalStackEntry<unknown>[];
+  /** Callback when a form closes (pops the top form from the stack) */
+  onClose: () => void;
+  /** Request confirmation before cancelling an entry; resolves true if confirmed */
+  onCancelRequest: (entry: InternalStackEntry<unknown>) => Promise<boolean>;
+}
+```
+
+> **Note:** `InternalStackEntry` is an **internal type** — it is not exported
+> from the package entry point and is not part of the public API. It appears
+> here only to document the value's shape. Consumers obtain the full value from
+> `useFormStackViewport()` and never construct or name `InternalStackEntry`
+> directly; the public, sanitized view of a stack entry is `StackEntry`.
 
 ## Advanced Usage
 

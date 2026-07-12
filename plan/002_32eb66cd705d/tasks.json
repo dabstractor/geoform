@@ -77,7 +77,7 @@
               "type": "Task",
               "id": "P1.M2.T1",
               "title": "Update README.md API Reference for all 0.2.0 symbols",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Add/repair the API Reference entries so every 0.2.0 public symbol is documented in README.md following the existing house-style templates (component entry, hook Returns table, type Definition block — see readme_gap_map.md §House-Style). Line anchors verified.",
               "subtasks": [
                 {
@@ -128,7 +128,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S4",
                   "title": "Add useFormStackViewport hook + FormStackViewportValue type entries",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §3.5/§3.6 — useFormStackViewport and FormStackViewportValue each have 0 grep hits in README. useFormStackURLSync is the last hook (~line 354, ends with `---` at ~line 394, before `### Types` line 397). FormStackActions type is the last type (~line 491-501, before `## Advanced Usage` line 503).\n2. INPUT: The hook contract from src/hooks/useFormStackViewport.ts (returns FormStackViewportValue | null; null when empty or outside a provider; assignable to FormStackRendererProps — no internal-type leakage). The type from src/types/context.ts:10-22 (FormStackViewportValue = { stack: InternalStackEntry<unknown>[]; onClose: () => void; onCancelRequest: (entry) => Promise<boolean> }).\n3. LOGIC: In README.md: (a) insert a new `#### useFormStackViewport` hook block after the `---` at ~line 394 (before `### Types`): one-line description, use-case note (consumers who wrap/forward custom props to the renderer instead of using <FormStackViewport/>), a `**Returns:**` table row (`| value | FormStackViewportValue | null | Renderer props, or null when empty |`). (b) insert a new `#### FormStackViewportValue` type block after line 501 (before `## Advanced Usage`): one-line description + a `**Definition:**` tsx interface block pulled verbatim from src/types/context.ts:10-22 (substituting the InternalStackEntry import note). Match the house-style hook and type templates.\n4. OUTPUT: `grep -c useFormStackViewport README.md` ≥ 1 AND `grep -c FormStackViewportValue README.md` ≥ 1.\n5. DOCS: [Mode B] This subtask IS a README documentation edit. No source files touched.",
@@ -150,7 +150,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T2.S1",
                   "title": "Add Features bullet + Hostable Viewport (Single Shared Modal) Advanced Usage section",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T1.S1",
