@@ -4,7 +4,7 @@
       "type": "Phase",
       "id": "P1",
       "title": "Hostable Viewport 0.2.0 — Conformance & Documentation",
-      "status": "Researching",
+      "status": "Complete",
       "description": "The 0.2.0 'hostable viewport (single shared modal)' feature is ALREADY IMPLEMENTED and shipped (v1.0.0, commit 1e09499). This phase's scope is strictly: (1) verify the existing implementation against the finalized PRD and close the one genuine conformance gap (popToIndex missing from the useFormStack() combined hook), and (2) sync the stale README.md so every 0.2.0 public symbol and the shared-modal pattern are documented. Re-implementing shipped code is explicitly forbidden. Research findings are stored in plan/002_32eb66cd705d/architecture/.",
       "milestones": [
         {
@@ -70,7 +70,7 @@
           "type": "Milestone",
           "id": "P1.M2",
           "title": "Sync changeset-level documentation — README.md (Requirement D2 / Mode B)",
-          "status": "Researching",
+          "status": "Complete",
           "description": "README.md shipped stale relative to the 0.2.0 code: it has ZERO mentions of autoRender, FormStackViewport, cancelForm, useFormStackViewport, FormStackViewportValue, or the shared-modal pattern (verified by grep; see plan/002_32eb66cd705d/architecture/readme_gap_map.md). This milestone is the Mode B changeset-level documentation task: enumerate and update every README section touched by 0.2.0, add an optional shared-modal example, then run a final verification sweep. JSDoc (Mode A) is already complete on all source symbols, so no source-doc edits are needed here.",
           "tasks": [
             {
@@ -213,14 +213,14 @@
               "type": "Task",
               "id": "P1.M2.T4",
               "title": "Sync changeset-level documentation — final verification sweep",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Mode B catch-all final task. Runs LAST (depends on every implementing subtask). Confirms the README is complete relative to 0.2.0, that no symbol is missing, and that the build/type-check/test suite are all green. Per SOW §5, this is the explicit final documentation task that prevents a coherent delta from shipping with a stale README.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T4.S1",
                   "title": "Verify README completeness for all 0.2.0 symbols + build/typecheck/test green",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S1",
