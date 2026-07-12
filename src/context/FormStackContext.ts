@@ -1,5 +1,9 @@
 import { createContext } from 'react';
-import type { FormStackState, FormStackActions, FormStackViewportValue } from '../types';
+import type {
+  FormStackState,
+  FormStackActions,
+  FormStackViewportContextValue,
+} from '../types';
 
 /**
  * Context for reading form stack state.
@@ -18,15 +22,18 @@ export const FormStackActionsContext = createContext<FormStackActions | null>(nu
 FormStackActionsContext.displayName = 'FormStackActionsContext';
 
 /**
- * Carries the props required by {@link FormStackRenderer} (internal stack,
- * `onClose`, `onCancelRequest`) so a consumer-placed {@link FormStackViewport}
- * can render the stacked form bodies without exposing `InternalStackEntry`.
+ * Carries the {@link FormStackViewportContextValue} (internal stack, `onClose`,
+ * `onCancelRequest`) required by {@link FormStackRenderer}, so a consumer-placed
+ * {@link FormStackViewport} can render the stacked form bodies. This is the INTERNAL
+ * channel: it carries {@link InternalStackEntry}. The public, sanitized view is
+ * {@link FormStackViewportValue}, produced by {@link useFormStackViewport}.
  *
  * The provider sets this to `null` when the stack is empty (and it is `null`
  * outside any provider), so {@link FormStackViewport} and
  * {@link useFormStackViewport} render/return nothing in those cases.
  */
-export const FormStackViewportContext = createContext<FormStackViewportValue | null>(null);
+export const FormStackViewportContext =
+  createContext<FormStackViewportContextValue | null>(null);
 FormStackViewportContext.displayName = 'FormStackViewportContext';
 
 /**

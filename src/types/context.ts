@@ -1,26 +1,49 @@
 import type { StackEntry, OpenFormOptions, InternalStackEntry } from './stack';
 
 /**
- * Props required to render the form-stack viewport via {@link FormStackRenderer}.
+ * Internal context value carried by {@link FormStackViewportContext}. Same shape the
+ * provider produces (internal stack, `onClose`, `onCancelRequest`) and structurally
+ * identical to {@link FormStackRendererProps}, so {@link FormStackViewport} can spread
+ * it onto {@link FormStackRenderer}.
  *
- * Structurally identical to {@link FormStackRendererProps} so that
- * {@link FormStackViewport} can forward it to {@link FormStackRenderer} via
- * spread (`<FormStackRenderer {...viewport} />`) **without** leaking internal
- * types (`component`/`deferred`) into the public API. Consumers should never
- * need to construct this themselves — read it via {@link useFormStackViewport}
- * or let {@link FormStackViewport} render it.
+ * Never exposed publicly: it carries {@link InternalStackEntry} (with
+ * `component`/`deferred`/`confirmOnCancel`) and an `onCancelRequest` typed on
+ * `InternalStackEntry`. The public, sanitized view is {@link FormStackViewportValue}.
  *
- * @see {@link FormStackViewport} - Zero-prop component that renders this value
- * @see {@link useFormStackViewport} - Hook returning this value (or null)
- * @see {@link FormStackRendererProps} - The renderer's prop interface it mirrors
+ * @internal
  */
-export interface FormStackViewportValue {
+export interface FormStackViewportContextValue {
   /** Internal stack entries to render (top visible, parents mounted-hidden) */
   stack: InternalStackEntry<unknown>[];
   /** Callback when a form closes (pops the top form from the stack) */
   onClose: () => void;
   /** Request confirmation before cancelling an entry; resolves true if confirmed */
   onCancelRequest: (entry: InternalStackEntry<unknown>) => Promise<boolean>;
+}
+
+/**
+ * Public, sanitized value returned by {@link useFormStackViewport} (or `null` when the
+ * stack is empty). A deliberately narrow view of the internal
+ * {@link FormStackViewportContextValue}: a **read-only** `{ id, label }[]` stack and
+ * the `onClose` callback only.
+ *
+ * It intentionally does **not** expose the internal stack-entry fields
+ * (`component`, `deferred`, `confirmOnCancel`) or an `onCancelRequest` callback.
+ * Those are internal to the renderer (see {@link FormStackRendererProps} and the
+ * internal {@link FormStackViewportContextValue}); leaking them would let a consumer
+ * hijack a form's promise resolution (`entry.deferred.resolve(...)`) or mount forms
+ * directly. Most consumers should use {@link FormStackViewport} (the zero-prop
+ * component) instead of this hook.
+ *
+ * @see {@link useFormStackViewport} - Hook returning this value (or null)
+ * @see {@link FormStackViewport} - Zero-prop component that renders the viewport
+ * @see {@link StackEntry} - The public entry type (`{ id, label? }`)
+ */
+export interface FormStackViewportValue {
+  /** Read-only stack entries (`{ id, label? }` only — no component/deferred) */
+  stack: readonly StackEntry[];
+  /** Callback to close/pop the top form */
+  onClose: () => void;
 }
 
 /**

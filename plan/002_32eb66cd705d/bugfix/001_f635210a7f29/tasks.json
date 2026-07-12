@@ -91,14 +91,14 @@
               "type": "Task",
               "id": "P1.M2.T1",
               "title": "Fix useFormStackViewport() type leakage (Issue 3)",
-              "status": "Planned",
+              "status": "Researching",
               "description": "The low-level public hook useFormStackViewport() returns FormStackViewportValue whose stack field is typed InternalStackEntry<unknown>[], exposing component, deferred.resolve/reject, and confirmOnCancel. The fix separates the internal context value type (needed by the renderer) from the public hook return type (sanitized to StackEntry[]), so consumers cannot hijack form resolution.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T1.S1",
                   "title": "Define internal context value type and sanitize public FormStackViewportValue",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/002_32eb66cd705d/bugfix/001_f635210a7f29/architecture/issue_analysis.md §Issue 3 and architecture/system_context.md §Type Hierarchy. Currently FormStackViewportValue (src/types/context.ts:19) and FormStackRendererProps (src/components/FormStackRenderer.tsx:24) are structurally identical, both carrying InternalStackEntry<unknown>[]. The FormStackViewportContext (src/context/FormStackContext.ts:37) is typed createContext<FormStackViewportValue | null>. The provider's viewportValue useMemo creates { stack: state.stack, onClose: closeForm, onCancelRequest: handleCancelRequest } which is the internal shape.\n2. INPUT: No inputs from other subtasks. This is the type-definition foundation.\n3. LOGIC:\n   a) In src/types/context.ts, add a new @internal interface for the context value (same shape as the current FormStackViewportValue but explicitly internal):\n      ```ts\n      /** @internal — carries InternalStackEntry for the renderer; never exposed publicly */\n      export interface FormStackViewportContextValue {\n        stack: InternalStackEntry<unknown>[];\n        onClose: () => void;\n        onCancelRequest: (entry: InternalStackEntry<unknown>) => Promise<boolean>;\n      }\n      ```\n   b) Change the public FormStackViewportValue to a sanitized shape:\n      ```ts\n      export interface FormStackViewportValue {\n        /** Read-only stack entries (id + label only — no internal component/deferred) */\n        stack: readonly StackEntry[];\n        /** Callback to close/pop the top form */\n        onClose: () => void;\n      }\n      ```\n      Remove onCancelRequest from the public type (it takes InternalStackEntry which consumers no longer have). Export FormStackViewportContextValue from src/types/index.ts.\n   c) In src/context/FormStackContext.ts, change FormStackViewportContext type from `FormStackViewportValue | null` to `FormStackViewportContextValue | null`. Update the import.\n4. OUTPUT: Two distinct types: FormStackViewportContextValue (internal, carries InternalStackEntry) for the context, and FormStackViewportValue (public, sanitized to StackEntry[]) for the hook. The context now carries the internal type. The public type no longer exposes component, deferred, confirmOnCancel, or onCancelRequest.\n5. DOCS: [Mode A] Update the JSDoc on FormStackViewportValue in src/types/context.ts to document the sanitized fields and explicitly state that component/deferred are internal-only.",
@@ -112,7 +112,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S2",
                   "title": "Update useFormStackViewport hook to map internal-to-public and fix FormStackViewport + tests",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T1.S1"
