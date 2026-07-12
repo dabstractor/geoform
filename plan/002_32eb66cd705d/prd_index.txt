@@ -1,0 +1,29 @@
+h1.0 PRD: React Hierarchical Form Stack System (v1)
+ h2.0 1. Purpose
+ h2.1 2. Explicit Non-Goals
+ h2.2 3. Core UX Rules (Non-Negotiable)
+ h2.3 4. Mental Model
+ h2.4 5. Public API
+  h3.0 5.1 FormStackProvider
+   h4.0 autoRender (default true)
+  h3.1 5.2 useFormStack()
+   h4.1 openForm
+   h4.2 closeForm
+   h4.3 cancelForm
+   h4.4 popToIndex
+   h4.5 stack
+ h2.5 6. Form Contract
+ h2.6 7. Breadcrumbs
+ h2.7 8. Cancellation & Dirty State
+ h2.8 9. Error Handling
+ h2.9 10. Rendering Behavior
+  h3.2 10.1 Consumer-Hosted Viewport (Single Shared Modal)
+ h2.10 11. Query String Integration (Initial Use Case)
+ h2.11 12. Example Consumer Usage
+ h2.12 13. Design Principles
+ h2.13 14. Success Criteria
+ h2.14 15. Open Questions (Deferred by Design)
+ h2.15 16. Changelog
+  h3.3 0.2.0 — Hostable viewport (single shared modal)
+---
+code:11 para:19 list:19

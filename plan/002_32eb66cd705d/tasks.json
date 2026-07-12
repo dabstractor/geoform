@@ -1,0 +1,176 @@
+{
+  "backlog": [
+    {
+      "type": "Phase",
+      "id": "P1",
+      "title": "Hostable Viewport 0.2.0 — Conformance & Documentation",
+      "status": "Researching",
+      "description": "The 0.2.0 'hostable viewport (single shared modal)' feature is ALREADY IMPLEMENTED and shipped (v1.0.0, commit 1e09499). This phase's scope is strictly: (1) verify the existing implementation against the finalized PRD and close the one genuine conformance gap (popToIndex missing from the useFormStack() combined hook), and (2) sync the stale README.md so every 0.2.0 public symbol and the shared-modal pattern are documented. Re-implementing shipped code is explicitly forbidden. Research findings are stored in plan/002_32eb66cd705d/architecture/.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P1.M1",
+          "title": "Conformance Audit & Fix (Requirement D1)",
+          "status": "Planned",
+          "description": "Verify the already-shipped 0.2.0 implementation against the now-authoritative PRD, produce a formal audit note, and close the single genuine mismatch: popToIndex is absent from the useFormStack() combined hook surface even though PRD §5.2 and delta_prd.md §3 expect it there. No new modules; all changes are in-place edits to existing files plus tests.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M1.T1",
+              "title": "Verify 0.2.0 implementation against finalized PRD and close conformance gaps",
+              "status": "Planned",
+              "description": "Audit all seven D1 conformance bullets (audit_findings.md confirms they PASS) and formally document the result, then apply the one additive code fix (popToIndex on useFormStack) with a covering test. The audit is essentially complete via research; this task formalizes the note and lands the fix.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S1",
+                  "title": "Produce formal conformance audit note",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "prd_selectors": ["h2.4", "h3.0", "h4.0", "h3.1", "h4.1", "h4.2", "h4.3", "h4.4", "h4.5", "h2.9", "h3.2", "h2.15", "h3.3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: The audit was already performed (see plan/002_32eb66cd705d/architecture/audit_findings.md). All seven D1 bullets PASS with file:line evidence; tsc clean; 286/286 tests green. This subtask FORMALIZES that result into the deliverable the delta requires (delta_prd.md §4 D1: 'Output: a short audit note').\n2. INPUT: The audit evidence in plan/002_32eb66cd705d/architecture/audit_findings.md (seven PASS bullets + the popToIndex mismatch + the void-vs-Promise note).\n3. LOGIC: Create plan/002_32eb66cd705d/audit_note.md — a concise (≤2 page) formal audit note that, for each D1 bullet, states PASS with a one-line file:line citation and the covering test name; records the single genuine mismatch (popToIndex absent from useFormStack()) and the resolution (additive fix in S2); records NOTE 2 (popToIndex void return type matches PRD §5.2 — no action). No source code is modified in this subtask. Re-run `npx tsc --noEmit` and `npx vitest run` and record the green counts as the audit's tooling evidence.\n4. OUTPUT: The file plan/002_32eb66cd705d/audit_note.md exists and is the authoritative audit deliverable consumed by the README task (P1.M2) to know the final hook surface.\n5. DOCS: none — this is a planning artifact, not a user-facing/config/API surface change. (The audit_note.md itself is the deliverable.)"
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S2",
+                  "title": "Add popToIndex to the useFormStack() combined hook surface",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T1.S1"],
+                  "prd_selectors": ["h2.4", "h3.1", "h4.4", "h4.3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: audit_findings.md MISMATCH 1 — useFormStack() (src/hooks/useFormStack.ts:158-160) returns { stack, openForm, closeForm, cancelForm } but OMITS popToIndex, while useFormStackActions() exposes it and PRD §5.2 / delta §3 expect both hooks to surface it. The sibling action cancelForm is already on both hooks, so popToIndex's absence is an inconsistency. The fix is additive (~2 lines) and must be tested (implicit TDD).\n2. INPUT: The FormStackActions interface (src/types/context.ts:67-103) already declares popToIndex: (index: number) => void. useFormStackActions() already returns it. The existing UseFormStackReturn interface and useFormStack() body (src/hooks/useFormStack.ts) are the targets.\n3. LOGIC: Implement PRD §5.2 (popToIndex under useFormStack()). (a) Add `popToIndex: (index: number) => void;` to the UseFormStackReturn interface in src/hooks/useFormStack.ts, with a short JSDoc mirroring the cancelForm entry (reference <Breadcrumbs/> usage). (b) In the useFormStack() body, destructure popToIndex from useFormStackActions() and include it in the returned object. (c) TDD: add a test in src/hooks/__tests__/useFormStack.test.tsx asserting that useFormStack() exposes a callable popToIndex AND that calling it (on a 2-deep stack) cancels the deeper form — i.e. it is the same function the actions hook provides and is wired through. Mock nothing (use the real provider via test-utils). Follow the existing test patterns in that file.\n4. OUTPUT: `const { popToIndex } = useFormStack()` is valid and functional. UseFormStackReturn now lists { stack, openForm, closeForm, popToIndex, cancelForm }. `npx tsc --noEmit` and `npx vitest run` remain green (286+ → 287+ tests).\n5. DOCS: [Mode A] Add JSDoc for the new popToIndex member on UseFormStackReturn in src/hooks/useFormStack.ts as part of THIS subtask. This rides WITH the work — do not create a separate docs subtask. (README coverage of this new surface is handled by P1.M2.T1.S2.)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M2",
+          "title": "Sync changeset-level documentation — README.md (Requirement D2 / Mode B)",
+          "status": "Planned",
+          "description": "README.md shipped stale relative to the 0.2.0 code: it has ZERO mentions of autoRender, FormStackViewport, cancelForm, useFormStackViewport, FormStackViewportValue, or the shared-modal pattern (verified by grep; see plan/002_32eb66cd705d/architecture/readme_gap_map.md). This milestone is the Mode B changeset-level documentation task: enumerate and update every README section touched by 0.2.0, add an optional shared-modal example, then run a final verification sweep. JSDoc (Mode A) is already complete on all source symbols, so no source-doc edits are needed here.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M2.T1",
+              "title": "Update README.md API Reference for all 0.2.0 symbols",
+              "status": "Planned",
+              "description": "Add/repair the API Reference entries so every 0.2.0 public symbol is documented in README.md following the existing house-style templates (component entry, hook Returns table, type Definition block — see readme_gap_map.md §House-Style). Line anchors verified.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S1",
+                  "title": "Document autoRender prop + dev-mode guard on FormStackProvider",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "prd_selectors": ["h3.0", "h4.0", "h2.9"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §3.2 — the `#### FormStackProvider` block (README.md ~line 128-146) currently says '**Props:** None required.' and has no autoRender mention (0 grep hits). PRD §5.1 h4.0 defines autoRender (default true; false hosts the viewport yourself).\n2. INPUT: The exact autoRender semantics from src/components/FormStackProvider.tsx (FormStackProviderProps.autoRender, default true) and PRD §5.1. The dev-mode forgotten-host guard behavior from audit_findings.md bullet 4 (warns ≤ once per episode when autoRender={false} + open form + no mounted <FormStackViewport/>).\n3. LOGIC: In README.md, expand the FormStackProvider '**Props:**' area (~line 144) into a props table adding the `autoRender` row (Type: boolean, Default: true, Description: true = provider renders the viewport itself (v1 behavior); false = host the viewport yourself via <FormStackViewport/>). Keep 'children rendered normally.' Add a short dev-mode guard note. Add a minimal tsx snippet: <FormStackProvider autoRender={false}>...</FormStackProvider>. Match the house-style component-entry template.\n4. OUTPUT: `grep -c autoRender README.md` ≥ 1. The FormStackProvider section documents the prop and the guard.\n5. DOCS: [Mode B] This subtask IS a README documentation edit (the changeset-level doc). No source files touched. Cross-link the new entry to the Hostable Viewport section (P1.M2.T2.S1) once it exists."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S2",
+                  "title": "Document cancelForm + popToIndex across action tables and FormStackActions type",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T1.S2"],
+                  "prd_selectors": ["h3.1", "h4.2", "h4.3", "h4.4"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §3.3 — cancelForm has 0 grep hits in README (absent from ALL tables/types). popToIndex is partial (line 350 useFormStackActions table; line 499 FormStackActions type) but has no prose. The useFormStack Returns table (~line 294) lists only stack/openForm/closeForm and is now stale because after P1.M1.T1.S2 it must also show cancelForm AND popToIndex.\n2. INPUT: The FINAL hook surface after P1.M1.T1.S2: useFormStack() returns { stack, openForm, closeForm, popToIndex, cancelForm }; useFormStackActions() returns FormStackActions = { openForm, closeForm, popToIndex, cancelForm }. Signatures from PRD §5.2: cancelForm(): Promise<void>; popToIndex(index: number): void.\n3. LOGIC: In README.md: (a) useFormStackActions Returns table (~line 347-350) — ADD row `| cancelForm | () => Promise<void> | Cancels the top form (resolves its deferred with undefined; honors confirmOnCancel) |`; verify/clarify the existing popToIndex row ('cancels all forms deeper than index; used by <Breadcrumbs/>'). (b) useFormStack Returns table (~line 294) — ADD cancelForm AND popToIndex rows to match the post-fix surface. (c) FormStackActions type Definition block (~line 497-500) — ADD `cancelForm: () => Promise<void>;`. Match the house-style Returns-table and type-block templates exactly.\n4. OUTPUT: `grep -c cancelForm README.md` ≥ 3 (two tables + one type def); popToIndex rows present and accurate in both hook tables.\n5. DOCS: [Mode B] This subtask IS a README documentation edit. No source files touched."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S3",
+                  "title": "Add FormStackViewport component entry",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "prd_selectors": ["h2.9", "h3.2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §3.4 — FormStackViewport has 0 grep hits in README. The Components section ends with #### FormErrorBoundary + a `---` separator at ~line 264, before `### Hooks` (line 266). PRD §10/§10.1 define the viewport.\n2. INPUT: The component contract from src/components/FormStackViewport.tsx (zero-prop; reads stack from context; registers mount for the dev guard; renders <FormStackRenderer {...viewport} />; renders null when empty or outside a provider). PRD §10.1 usage.\n3. LOGIC: In README.md, insert a new `#### FormStackViewport` block after the `---` at ~line 264 (before `### Hooks`). Content: one-line description (zero-prop placeable viewport; renders stacked form bodies — top visible, parents mounted-hidden via display:none; reads stack from context; renders nothing when empty); a tsx import+placement snippet (`<FormStackProvider autoRender={false}>` + a host containing `<FormStackViewport/>`); a `**Props:** None` statement; a note that it is only meaningful with autoRender={false}. Match the house-style component-entry template.\n4. OUTPUT: `grep -c FormStackViewport README.md` ≥ 1.\n5. DOCS: [Mode B] This subtask IS a README documentation edit. No source files touched."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S4",
+                  "title": "Add useFormStackViewport hook + FormStackViewportValue type entries",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "prd_selectors": ["h2.9", "h3.2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §3.5/§3.6 — useFormStackViewport and FormStackViewportValue each have 0 grep hits in README. useFormStackURLSync is the last hook (~line 354, ends with `---` at ~line 394, before `### Types` line 397). FormStackActions type is the last type (~line 491-501, before `## Advanced Usage` line 503).\n2. INPUT: The hook contract from src/hooks/useFormStackViewport.ts (returns FormStackViewportValue | null; null when empty or outside a provider; assignable to FormStackRendererProps — no internal-type leakage). The type from src/types/context.ts:10-22 (FormStackViewportValue = { stack: InternalStackEntry<unknown>[]; onClose: () => void; onCancelRequest: (entry) => Promise<boolean> }).\n3. LOGIC: In README.md: (a) insert a new `#### useFormStackViewport` hook block after the `---` at ~line 394 (before `### Types`): one-line description, use-case note (consumers who wrap/forward custom props to the renderer instead of using <FormStackViewport/>), a `**Returns:**` table row (`| value | FormStackViewportValue | null | Renderer props, or null when empty |`). (b) insert a new `#### FormStackViewportValue` type block after line 501 (before `## Advanced Usage`): one-line description + a `**Definition:**` tsx interface block pulled verbatim from src/types/context.ts:10-22 (substituting the InternalStackEntry import note). Match the house-style hook and type templates.\n4. OUTPUT: `grep -c useFormStackViewport README.md` ≥ 1 AND `grep -c FormStackViewportValue README.md` ≥ 1.\n5. DOCS: [Mode B] This subtask IS a README documentation edit. No source files touched."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M2.T2",
+              "title": "Add README narrative sections for the hostable viewport pattern",
+              "status": "Planned",
+              "description": "Add the cross-cutting README sections that make 0.2.0 adoptable from the README alone: a Features bullet, a full Hostable Viewport (Single Shared Modal) Advanced Usage section with the PRD §10.1 example, and a Common Pitfall for the forgotten-host mistake.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S1",
+                  "title": "Add Features bullet + Hostable Viewport (Single Shared Modal) Advanced Usage section",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": ["P1.M2.T1.S1", "P1.M2.T1.S3"],
+                  "prd_selectors": ["h2.0", "h3.0", "h4.0", "h2.9", "h3.2", "h2.15", "h3.3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §3.1/§3.7 — Features (line 10, last bullet line 16) and Advanced Usage (line 503, last subsection Custom Breadcrumb Styling ~line 627, before Common Pitfalls line 664) have zero mentions of the hostable viewport / shared modal. PRD §10.1 (h3.2) provides the canonical SharedModalHost example.\n2. INPUT: The shared-modal pattern and guarantees from PRD §10.1 (FormStackProvider autoRender={false} + a host using useFormStackState().stack / useFormStackActions().cancelForm, <Breadcrumbs/> as DialogTitle, <FormStackViewport/> as DialogContent, Dialog open={stack.length>0} onClose={cancelForm}; guarantees: with autoRender={false} and exactly one <FormStackViewport/>, an open form renders exactly once; openForm() promise contract unchanged).\n3. LOGIC: In README.md: (a) Add ONE bullet to Features after line 16: 'Hostable Viewport (Single Shared Modal) — set autoRender={false} on <FormStackProvider/> and place <FormStackViewport/> to host the whole stack in one window (e.g. an MUI <Dialog/>); zero migration, defaults to v1 behavior.' (b) Insert a new `### Hostable Viewport (Single Shared Modal)` subsection as the LAST Advanced Usage subsection (before `## Common Pitfalls` line 664). Include: rationale (one window hosts the entire stack; chrome is the consumer's job; geoform stays chrome-less); the FULL runnable SharedModalHost example copied from PRD §10.1; the host-level Escape/backdrop → cancelForm() wiring note; the guarantees paragraph. Cross-link to the autoRender prop (P1.M2.T1.S1) and the new Common Pitfall (P1.M2.T2.S2).\n4. OUTPUT: `grep -ci 'shared modal' README.md` ≥ 1 AND `grep -c autoRender README.md` increments; the Advanced Usage section contains the PRD §10.1 example verbatim (adapted).\n5. DOCS: [Mode B] This subtask IS a README documentation edit. No source files touched."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S2",
+                  "title": "Add 'Forgetting <FormStackViewport/> with autoRender={false}' Common Pitfall",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M2.T1.S1", "P1.M2.T1.S3"],
+                  "prd_selectors": ["h4.0", "h3.2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §3.8 — Common Pitfalls (line 664) has no entry for the forgotten-host mistake; the last pitfall ends ~line 937 before `## TypeScript` (line 939). The existing pitfalls use a consistent BAD / GOOD / Why template (see README §668+ 'Calling closeForm() Directly...').\n2. INPUT: The dev-mode forgotten-host guard behavior (audit_findings.md bullet 4): with autoRender={false} and no mounted <FormStackViewport/>, an open form renders nowhere and the provider warns ≤ once per episode in dev.\n3. LOGIC: In README.md, insert a new `### Forgetting <FormStackViewport/> with autoRender={false}` pitfall block before `## TypeScript` (line 939), matching the existing BAD/GOOD/Why template. Problem: autoRender={false} means the provider renders no viewport; forgetting to mount <FormStackViewport/> hides open forms (only the dev guard hints at it). BAD: <FormStackProvider autoRender={false}> with no <FormStackViewport/>. GOOD: mount exactly one <FormStackViewport/> where the stack bodies should appear. Why: explain the dev-mode guard. Add @see links to the FormStackViewport component entry and the Hostable Viewport section.\n4. OUTPUT: `grep -c 'autoRender={false}' README.md` ≥ 2 (pitfall + advanced usage); the pitfall follows the house template.\n5. DOCS: [Mode B] This subtask IS a README documentation edit. No source files touched."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M2.T3",
+              "title": "Add shared-modal example (OPTIONAL / stretch — non-blocking)",
+              "status": "Planned",
+              "description": "Delta_prd.md §4 D2 marks an examples/shared-modal/ demo as optional (nice-to-have, not blocking). examples/ currently contains only relational-forms/. This task may be skipped without affecting the delta's success criteria.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T3.S1",
+                  "title": "Create examples/shared-modal/ demonstration",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": ["P1.M2.T2.S1"],
+                  "prd_selectors": ["h3.2", "h2.11"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §4 — examples/shared-modal/ does NOT exist (only examples/relational-forms/). delta_prd.md §4 D2 marks this OPTIONAL / non-blocking. The existing examples/relational-forms/ (App.tsx, OrganizationForm.tsx, TeamForm.tsx, UserForm.tsx, types.ts) shows the house style for a runnable example.\n2. INPUT: The shared-modal pattern from PRD §10.1 and the README Advanced Usage section produced by P1.M2.T2.S1. The existing relational-forms example forms (reusable as the nested forms hosted inside the shared modal).\n3. LOGIC: Create examples/shared-modal/ containing a minimal runnable demo: an App using <FormStackProvider autoRender={false}> + a SharedModalHost (a simple inline modal or window chrome) rendering <Breadcrumbs/> as the header and <FormStackViewport/> as the body, with Escape/backdrop wired to cancelForm(). Reuse the relational-forms form components (Organization→Team→User) to demonstrate N-deep nesting inside one window. Add a short README or header comment explaining how to run it. This is illustrative only — do NOT add it to the published package (it stays under examples/).\n4. OUTPUT: examples/shared-modal/ exists with a working demo of the single-shared-modal pattern; it is referenced from the README Advanced Usage section (optional link).\n5. DOCS: [Mode B] Add a one-line pointer to the example in the README Advanced Usage section if not already present. No source library files touched (examples/ is not part of the published dist)."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M2.T4",
+              "title": "Sync changeset-level documentation — final verification sweep",
+              "status": "Planned",
+              "description": "Mode B catch-all final task. Runs LAST (depends on every implementing subtask). Confirms the README is complete relative to 0.2.0, that no symbol is missing, and that the build/type-check/test suite are all green. Per SOW §5, this is the explicit final documentation task that prevents a coherent delta from shipping with a stale README.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T4.S1",
+                  "title": "Verify README completeness for all 0.2.0 symbols + build/typecheck/test green",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T1.S1", "P1.M1.T1.S2", "P1.M2.T1.S1", "P1.M2.T1.S2", "P1.M2.T1.S3", "P1.M2.T1.S4", "P1.M2.T2.S1", "P1.M2.T2.S2", "P1.M2.T3.S1"],
+                  "prd_selectors": ["h2.15", "h3.3", "h2.13"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: This is the §5 Mode B final sweep. The completeness bar is delta_prd.md §7 Success Criteria: 'README.md documents every 0.2.0 public symbol and the shared-modal pattern; grep for each new symbol returns hits in README' and 'Full test suite (286+) continues to pass; npm run build / npm run typecheck green.'\n2. INPUT: The final README.md (after P1.M2.T1.*, P1.M2.T2.*, and the optional example) and the final source (after P1.M1.T1.S2). readme_gap_map.md §Completion Verification defines the exact grep set.\n3. LOGIC: (a) Grep README.md for each 0.2.0 symbol — EVERY one must return ≥1 hit: autoRender, FormStackViewport, cancelForm, popToIndex, useFormStackViewport, FormStackViewportValue, and the phrase 'Single Shared Modal' (or 'shared modal'). If any returns 0 hits, add the missing mention in the correct section. (b) Run `npm run build` (tsup), `npx tsc --noEmit`, and `npx vitest run`; all must be green (tests ≥ 287 after the popToIndex test added in P1.M1.T1.S2). (c) Sanity-read the FormStackProvider, Hooks, Types, Advanced Usage, and Common Pitfalls sections for internal consistency (no stale claim that useFormStack returns only 3 actions, etc.). Fix any residual staleness in place.\n4. OUTPUT: A green build + typecheck + test run; every 0.2.0 symbol present in README; no internal contradictions. The README delta is complete and a consumer reading only the README can adopt autoRender={false} + <FormStackViewport/> correctly.\n5. DOCS: [Mode B] This subtask performs the final README consistency sweep; if it adds any missing mention, that edit is part of this sweep (not a new feature). No source library behavior changes."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
