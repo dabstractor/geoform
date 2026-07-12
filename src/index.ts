@@ -84,6 +84,28 @@ export { FormStackProvider } from './components';
 export type { FormStackProviderProps } from './components';
 
 /**
+ * Internal renderer that mounts every form in the stack and hides inactive
+ * ones with CSS so parent form state is preserved while children are active.
+ * Used by {@link FormStackProvider}; exported for advanced/headless setups
+ * that manage their own stack state.
+ *
+ * @see {@link FormStackProvider} - Default provider that renders this
+ *
+ * @example
+ * ```tsx
+ * import { FormStackRenderer } from 'geoform';
+ *
+ * <FormStackRenderer stack={internalStack} onClose={pop} onCancelRequest={confirm} />
+ * ```
+ */
+export { FormStackRenderer } from './components';
+
+/**
+ * Props for FormStackRenderer component.
+ */
+export type { FormStackRendererProps } from './components';
+
+/**
  * Breadcrumbs component for displaying form stack navigation.
  * Clicking a breadcrumb navigates to that form, cancelling all deeper forms.
  *
