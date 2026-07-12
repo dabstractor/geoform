@@ -77,7 +77,7 @@
               "type": "Task",
               "id": "P1.M2.T1",
               "title": "Update README.md API Reference for all 0.2.0 symbols",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Add/repair the API Reference entries so every 0.2.0 public symbol is documented in README.md following the existing house-style templates (component entry, hook Returns table, type Definition block — see readme_gap_map.md §House-Style). Line anchors verified.",
               "subtasks": [
                 {
@@ -115,7 +115,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S3",
                   "title": "Add FormStackViewport component entry",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §3.4 — FormStackViewport has 0 grep hits in README. The Components section ends with #### FormErrorBoundary + a `---` separator at ~line 264, before `### Hooks` (line 266). PRD §10/§10.1 define the viewport.\n2. INPUT: The component contract from src/components/FormStackViewport.tsx (zero-prop; reads stack from context; registers mount for the dev guard; renders <FormStackRenderer {...viewport} />; renders null when empty or outside a provider). PRD §10.1 usage.\n3. LOGIC: In README.md, insert a new `#### FormStackViewport` block after the `---` at ~line 264 (before `### Hooks`). Content: one-line description (zero-prop placeable viewport; renders stacked form bodies — top visible, parents mounted-hidden via display:none; reads stack from context; renders nothing when empty); a tsx import+placement snippet (`<FormStackProvider autoRender={false}>` + a host containing `<FormStackViewport/>`); a `**Props:** None` statement; a note that it is only meaningful with autoRender={false}. Match the house-style component-entry template.\n4. OUTPUT: `grep -c FormStackViewport README.md` ≥ 1.\n5. DOCS: [Mode B] This subtask IS a README documentation edit. No source files touched.",
@@ -128,7 +128,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S4",
                   "title": "Add useFormStackViewport hook + FormStackViewportValue type entries",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §3.5/§3.6 — useFormStackViewport and FormStackViewportValue each have 0 grep hits in README. useFormStackURLSync is the last hook (~line 354, ends with `---` at ~line 394, before `### Types` line 397). FormStackActions type is the last type (~line 491-501, before `## Advanced Usage` line 503).\n2. INPUT: The hook contract from src/hooks/useFormStackViewport.ts (returns FormStackViewportValue | null; null when empty or outside a provider; assignable to FormStackRendererProps — no internal-type leakage). The type from src/types/context.ts:10-22 (FormStackViewportValue = { stack: InternalStackEntry<unknown>[]; onClose: () => void; onCancelRequest: (entry) => Promise<boolean> }).\n3. LOGIC: In README.md: (a) insert a new `#### useFormStackViewport` hook block after the `---` at ~line 394 (before `### Types`): one-line description, use-case note (consumers who wrap/forward custom props to the renderer instead of using <FormStackViewport/>), a `**Returns:**` table row (`| value | FormStackViewportValue | null | Renderer props, or null when empty |`). (b) insert a new `#### FormStackViewportValue` type block after line 501 (before `## Advanced Usage`): one-line description + a `**Definition:**` tsx interface block pulled verbatim from src/types/context.ts:10-22 (substituting the InternalStackEntry import note). Match the house-style hook and type templates.\n4. OUTPUT: `grep -c useFormStackViewport README.md` ≥ 1 AND `grep -c FormStackViewportValue README.md` ≥ 1.\n5. DOCS: [Mode B] This subtask IS a README documentation edit. No source files touched.",

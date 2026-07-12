@@ -281,6 +281,51 @@ import { FormErrorBoundary } from 'geoform';
 
 ---
 
+#### FormStackViewport
+
+Zero-prop placeable viewport that renders the stacked form bodies — the top form
+is visible while parent forms stay mounted but hidden (`display: none`). It reads
+the stack from context, so it takes no props, and renders `null` when the stack is
+empty or when it is used outside a `<FormStackProvider>`.
+
+```tsx
+import {
+  FormStackProvider,
+  FormStackViewport,
+  useFormStackState,
+} from 'geoform';
+
+function App() {
+  return (
+    <FormStackProvider autoRender={false}>
+      <SharedModalHost />
+    </FormStackProvider>
+  );
+}
+
+// Render <FormStackViewport/> wherever the stacked form bodies should appear —
+// e.g. the body of a single shared modal that hosts the whole stack:
+function SharedModalHost() {
+  const { stack } = useFormStackState();
+  return (
+    <Dialog open={stack.length > 0}>
+      <FormStackViewport />
+    </Dialog>
+  );
+}
+```
+
+**Props:** None. The viewport reads everything it needs from context.
+
+> **Note:** `<FormStackViewport/>` is only meaningful when the provider is set to
+> `<FormStackProvider autoRender={false}>`. With the default `autoRender={true}`,
+> the provider already renders its own viewport as a sibling of `children`, so
+> mounting an additional `<FormStackViewport/>` would render the stack twice. For
+> the full single-shared-modal pattern, see
+> [Hostable Viewport](#hostable-viewport-single-shared-modal).
+
+---
+
 ### Hooks
 
 #### useFormStack
