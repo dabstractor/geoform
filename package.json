@@ -1,6 +1,6 @@
 {
   "name": "geoform",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "React Hierarchical Form Stack System - infinitely nestable forms with state preservation",
   "author": "Your Name",
   "license": "MIT",
