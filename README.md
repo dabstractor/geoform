@@ -14,6 +14,7 @@ React Hierarchical Form Stack System - infinitely nestable forms with state pres
 - **Full TypeScript Support** - Generics flow from form definition to result handling
 - **Built-in Breadcrumb Navigation** - Click any breadcrumb to navigate back through the form hierarchy
 - **Error Boundaries Per Form** - Crashes in one form don't affect parent forms
+- **Hostable Viewport (Single Shared Modal)** - Set `autoRender={false}` on `<FormStackProvider/>` and place `<FormStackViewport/>` to host the whole stack in one window (e.g. an MUI `<Dialog/>`); zero migration, defaults to v1 behavior
 
 ## Installation
 
@@ -786,6 +787,72 @@ Style breadcrumbs with CSS using the provided class names:
   color: #999;
 }
 ```
+
+### Hostable Viewport (Single Shared Modal)
+
+By default (`autoRender={true}`), `<FormStackProvider/>` renders the stacked form
+bodies itself, as a sibling of its children. For most apps that is exactly right
+and needs zero setup. But when you want **one window to host the entire stack** —
+for example a single modal that stays open while forms push and pop inside it —
+set `autoRender={false}` and render `<FormStackViewport/>` yourself wherever the
+stacked bodies should appear.
+
+This keeps geoform **chrome-less**: the library renders the form *bodies* and
+injects `onSubmit`/`onCancel`/`onError`, but it never imposes a window. The window
+chrome — the shared modal, its breadcrumb header, and its body slot — is the
+**consumer's** job. You get full control of the surrounding UI without forking the
+renderer.
+
+```tsx
+import {
+  FormStackProvider,
+  FormStackViewport,
+  Breadcrumbs,
+  useFormStackState,
+  useFormStackActions,
+} from 'geoform';
+
+// Dialog / DialogTitle / DialogContent below are illustrative — e.g. from
+// @mui/material. Any window primitive that gives you an open/onClose + a body
+// slot works; geoform has no hard MUI dependency.
+<FormStackProvider autoRender={false}>
+  <SharedModalHost />
+</FormStackProvider>
+
+function SharedModalHost() {
+  const { stack } = useFormStackState();
+  const { cancelForm } = useFormStackActions();
+  return (
+    <Dialog open={stack.length > 0} onClose={cancelForm}>
+      <DialogTitle><Breadcrumbs /></DialogTitle>
+      <DialogContent><FormStackViewport /></DialogContent>
+    </Dialog>
+  );
+}
+```
+
+A few things to notice in the host above:
+
+- **One window, unbounded nesting.** Opening a child form replaces the visible body
+  (the parent stays mounted but hidden, state preserved); the `<DialogTitle>`
+  becomes breadcrumbs; nesting is unbounded (N deep).
+- **Escape / backdrop cancels the top form.** The host's close gesture is wired to
+  `cancelForm()`. With MUI's `<Dialog>`, a single `onClose` handler covers both the
+  Escape key and the backdrop click — so closing the modal cancels the top form
+  (honoring `confirmOnCancel`) while leaving deeper forms intact. The host owns the
+  window's close gesture; geoform owns the stack's cancel semantics.
+- **`<FormStackViewport/>` renders nothing when empty.** `Dialog open={stack.length > 0}`
+  keeps the window closed until a form is actually open.
+
+> **Guarantees:** with `autoRender={false}` and exactly one `<FormStackViewport/>`
+> mounted, an open form renders **exactly once** — the renderer is not duplicated.
+> The promise contract of `openForm()` is **unchanged**, so existing callers (e.g.
+> `ExpandingAutocomplete`) need no edits. Mounting more than one
+> `<FormStackViewport/>` while `autoRender={false}` would render the stack multiple
+> times — don't.
+
+@see the [`autoRender`](#formstackprovider) prop on `<FormStackProvider/>`, and
+[Common Pitfalls > Forgetting `<FormStackViewport/>`](#forgetting-formstackviewport-with-autorenderfalse).
 
 ## Common Pitfalls
 

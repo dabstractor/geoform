@@ -143,14 +143,14 @@
               "type": "Task",
               "id": "P1.M2.T2",
               "title": "Add README narrative sections for the hostable viewport pattern",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Add the cross-cutting README sections that make 0.2.0 adoptable from the README alone: a Features bullet, a full Hostable Viewport (Single Shared Modal) Advanced Usage section with the PRD §10.1 example, and a Common Pitfall for the forgotten-host mistake.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T2.S1",
                   "title": "Add Features bullet + Hostable Viewport (Single Shared Modal) Advanced Usage section",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T1.S1",
@@ -171,7 +171,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T2.S2",
                   "title": "Add 'Forgetting <FormStackViewport/> with autoRender={false}' Common Pitfall",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T1.S1",
