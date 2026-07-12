@@ -1129,6 +1129,55 @@ The form component itself should just call `onSubmit(data)` or `onCancel()`—th
 
 @see [Core Concepts > Promise-Based API](#promise-based-api) and [API Reference > useFormStack](#useformstack).
 
+### Forgetting <FormStackViewport/> with autoRender={false}
+
+**Problem**: With `<FormStackProvider autoRender={false}>`, the provider renders **no** viewport. If you forget to mount `<FormStackViewport/>` yourself, an open form renders nowhere — the form is pushed onto the stack and its `openForm()` Promise stays pending, but nothing is visible on screen. The only hint is a dev-only `console.warn`.
+
+**❌ BAD** - autoRender off, no viewport mounted:
+```tsx
+// App.tsx
+function App() {
+  return (
+    <FormStackProvider autoRender={false}>
+      <MyApp />  // ❌ No <FormStackViewport/> anywhere!
+    </FormStackProvider>
+  );
+}
+// openForm() pushes the form onto the stack, but its body renders nowhere.
+// In development you'll see a one-time warning:
+//   [FormStackProvider] autoRender is false and a form is open, but no
+//   <FormStackViewport/> is mounted. Render <FormStackViewport/> inside
+//   your host (e.g. your shared modal) so the form is visible.
+```
+
+**✅ GOOD** - mount exactly one <FormStackViewport/> where the stack bodies go:
+```tsx
+// App.tsx
+function App() {
+  return (
+    <FormStackProvider autoRender={false}>
+      <SharedModalHost />
+    </FormStackProvider>
+  );
+}
+
+// Render <FormStackViewport/> inside your host (e.g. a shared modal):
+function SharedModalHost() {
+  const { stack } = useFormStackState();
+  return (
+    <Dialog open={stack.length > 0}>
+      <FormStackViewport />  // ✅ The stacked form bodies now render here
+    </Dialog>
+  );
+}
+```
+
+**Why it's problematic**: With `autoRender={false}` the provider intentionally renders no viewport — it still provides the state/actions context and still renders `<ConfirmationDialog/>`, but it no longer shows form bodies. So an `openForm()` call succeeds (the form is on the stack and its Promise stays open), yet nothing appears. The form isn't broken; it's just unhosted.
+
+> **Note**: In development, a dev-mode guard logs a `console.warn` at most once per "forgotten host" episode when `autoRender={false}`, a form is open, and no `<FormStackViewport/>` has mounted. The warning resets once a viewport mounts or the stack clears. This guard is **dev-only** — in production an unhosted form is silent, so mount exactly one `<FormStackViewport/>`.
+
+@see [API Reference > FormStackViewport](#formstackviewport) for the zero-prop viewport, and [Advanced Usage > Hostable Viewport](#hostable-viewport-single-shared-modal) for the full single-shared-modal pattern.
+
 ## TypeScript
 
 ### Basic Usage

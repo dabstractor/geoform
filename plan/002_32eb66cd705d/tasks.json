@@ -143,7 +143,7 @@
               "type": "Task",
               "id": "P1.M2.T2",
               "title": "Add README narrative sections for the hostable viewport pattern",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Add the cross-cutting README sections that make 0.2.0 adoptable from the README alone: a Features bullet, a full Hostable Viewport (Single Shared Modal) Advanced Usage section with the PRD §10.1 example, and a Common Pitfall for the forgotten-host mistake.",
               "subtasks": [
                 {
@@ -171,7 +171,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T2.S2",
                   "title": "Add 'Forgetting <FormStackViewport/> with autoRender={false}' Common Pitfall",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T1.S1",
@@ -189,14 +189,14 @@
               "type": "Task",
               "id": "P1.M2.T3",
               "title": "Add shared-modal example (OPTIONAL / stretch — non-blocking)",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Delta_prd.md §4 D2 marks an examples/shared-modal/ demo as optional (nice-to-have, not blocking). examples/ currently contains only relational-forms/. This task may be skipped without affecting the delta's success criteria.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T3.S1",
                   "title": "Create examples/shared-modal/ demonstration",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T2.S1"
