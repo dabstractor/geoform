@@ -317,6 +317,8 @@ function MyComponent() {
 | `stack` | `readonly StackEntry[]` | Current form stack |
 | `openForm` | `<T>(options) => Promise<T \| undefined>` | Opens a form and awaits result |
 | `closeForm` | `() => void` | Closes the current form |
+| `popToIndex` | `(index: number) => void` | Navigates to the form at `index`, cancelling all deeper forms (used by `<Breadcrumbs/>`) |
+| `cancelForm` | `() => Promise<void>` | Cancels the top form (resolves its deferred with `undefined`; honors `confirmOnCancel`). No-op on an empty stack |
 
 ---
 
@@ -365,7 +367,8 @@ function CreateButton() {
 |----------|------|-------------|
 | `openForm` | `<T>(options) => Promise<T \| undefined>` | Opens a form |
 | `closeForm` | `() => void` | Closes the current form |
-| `popToIndex` | `(index: number) => void` | Navigates to form at index |
+| `popToIndex` | `(index: number) => void` | Navigates to the form at `index`, cancelling all deeper forms (used by `<Breadcrumbs/>`) |
+| `cancelForm` | `() => Promise<void>` | Cancels the top form (resolves its deferred with `undefined`; honors `confirmOnCancel`). No-op on an empty stack |
 
 ---
 
@@ -515,6 +518,7 @@ interface FormStackActions {
   openForm: <T>(options: OpenFormOptions<T>) => Promise<T | undefined>;
   closeForm: () => void;
   popToIndex: (index: number) => void;
+  cancelForm: () => Promise<void>;
 }
 ```
 

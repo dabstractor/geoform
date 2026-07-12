@@ -98,7 +98,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S2",
                   "title": "Document cancelForm + popToIndex across action tables and FormStackActions type",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S2"
@@ -115,7 +115,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S3",
                   "title": "Add FormStackViewport component entry",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: readme_gap_map.md §3.4 — FormStackViewport has 0 grep hits in README. The Components section ends with #### FormErrorBoundary + a `---` separator at ~line 264, before `### Hooks` (line 266). PRD §10/§10.1 define the viewport.\n2. INPUT: The component contract from src/components/FormStackViewport.tsx (zero-prop; reads stack from context; registers mount for the dev guard; renders <FormStackRenderer {...viewport} />; renders null when empty or outside a provider). PRD §10.1 usage.\n3. LOGIC: In README.md, insert a new `#### FormStackViewport` block after the `---` at ~line 264 (before `### Hooks`). Content: one-line description (zero-prop placeable viewport; renders stacked form bodies — top visible, parents mounted-hidden via display:none; reads stack from context; renders nothing when empty); a tsx import+placement snippet (`<FormStackProvider autoRender={false}>` + a host containing `<FormStackViewport/>`); a `**Props:** None` statement; a note that it is only meaningful with autoRender={false}. Match the house-style component-entry template.\n4. OUTPUT: `grep -c FormStackViewport README.md` ≥ 1.\n5. DOCS: [Mode B] This subtask IS a README documentation edit. No source files touched.",
