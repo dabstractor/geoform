@@ -306,13 +306,20 @@ export type { UseFormStackReturn } from './hooks';
 export { useFormStackURLSync } from './hooks';
 
 /**
- * Returns the props required by `<FormStackRenderer/>` (internal stack,
- * `onClose`, `onCancelRequest`), or `null` when the stack is empty. For
- * consumers who want to forward custom props to `<FormStackRenderer/>` or wrap
- * it. Most consumers should use `<FormStackViewport/>` instead.
+ * Low-level hook that returns a **sanitized, read-only** view of the open forms
+ * — each entry as a plain `{ id, label? }` ({@link StackEntry}) plus the
+ * `onClose` callback — or `null` when the stack is empty or the hook is used
+ * outside a `<FormStackProvider>`. Use it to *read* the open forms for custom
+ * rendering (e.g. a host header). It exposes only display-oriented fields — never
+ * the internal `component`/`deferred`/`confirmOnCancel` or an `onCancelRequest`
+ * callback — and the returned value is intentionally **not** spreadable onto
+ * `<FormStackRenderer/>` (PRD §10.1 "no internal-type leakage"). Most consumers
+ * should use the zero-prop {@link FormStackViewport} component, which renders the
+ * stacked form bodies.
  *
+ * @see {@link FormStackViewportValue} - The sanitized return type
  * @see {@link FormStackViewport} - The recommended, no-prop component form
- * @see {@link FormStackRenderer} - The low-level renderer this powers
+ * @see {@link FormStackRenderer} - The low-level renderer (takes internal types)
  */
 export { useFormStackViewport } from './hooks';
 
@@ -331,6 +338,14 @@ export type { UseFormStackURLSyncReturn } from './hooks';
 /**
  * Props interface that all form components must implement.
  * Forms receive these callbacks from FormStackProvider.
+ *
+ * Includes an optional `onError` callback a form calls to signal an
+ * application-level error (e.g. a failed save). The provider routes the error
+ * to the surrounding {@link FormErrorBoundary}, which shows Retry / Dismiss UI
+ * — it does **not** reject the `openForm()` promise (the `T | undefined`
+ * contract holds) and does **not** mutate the stack (PRD §9). On Dismiss the
+ * form is cancelled (`openForm()` resolves `undefined`); on Retry the form
+ * remounts and `openForm()` remains pending.
  *
  * @typeParam T - The type of value returned by onSubmit
  *
@@ -397,11 +412,17 @@ export type { FormStackState } from './types';
 export type { FormStackActions } from './types';
 
 /**
- * Props required to render the form-stack viewport via `<FormStackRenderer/>`,
- * returned by `useFormStackViewport()` (or `null` when the stack is empty).
- * Structurally identical to `FormStackRendererProps`.
+ * Public, sanitized value returned by `useFormStackViewport()` (or `null` when
+ * the stack is empty). A deliberately narrow, read-only view: each open form is
+ * exposed only as `{ id, label? }` ({@link StackEntry}) plus the `onClose`
+ * callback — i.e. `stack` is `readonly StackEntry[]`. It does **not** carry the
+ * internal entry fields (`component`/`deferred`/`confirmOnCancel`) or an
+ * `onCancelRequest` callback, so it is intentionally **not** spreadable onto
+ * `<FormStackRenderer/>` and cannot leak internal types (PRD §10.1
+ * "no internal-type leakage").
  *
  * @see {@link useFormStackViewport} - Hook that returns this type
- * @see {@link FormStackViewport} - Component that consumes this value
+ * @see {@link FormStackViewport} - Zero-prop component that renders the viewport
+ * @see {@link StackEntry} - The public entry type (`{ id, label? }`)
  */
 export type { FormStackViewportValue } from './types';

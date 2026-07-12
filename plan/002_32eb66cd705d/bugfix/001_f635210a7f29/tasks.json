@@ -4,7 +4,7 @@
       "type": "Phase",
       "id": "P1",
       "title": "Adversarial QA Remediation — geoform 0.2.0 Bug Fixes",
-      "status": "Ready",
+      "status": "Complete",
       "description": "Remediate the 4 pre-existing defects (2 Major, 2 Minor) identified during the adversarial QA pass of the geoform implementation against PRD v1 with the 0.2.0 hostable-viewport delta. Baseline: tsc clean, 294/294 tests pass. No critical issues — core open/submit/cancel/nest/state-preservation/breadcrumbs/hostable-viewport all work.",
       "milestones": [
         {
@@ -157,14 +157,14 @@
           "type": "Milestone",
           "id": "P1.M3",
           "title": "Changeset-Level Documentation Sync",
-          "status": "Ready",
+          "status": "Complete",
           "description": "Cross-cutting documentation updates that only make sense once all four fixes are in place. Per §5 Mode B, this final task sweeps README.md and overview docs to prevent documentation drift. Per-feature JSDoc updates (Mode A) have already ridden with each implementing subtask.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M3.T1",
               "title": "Sync changeset-level documentation (README.md + overview docs)",
-              "status": "Ready",
+              "status": "Complete",
               "description": "Update README.md to reflect the corrected onError behavior (now routed to error boundary, not rejecting), the sanitized FormStackViewportValue type, and the new duplicate-ID warning. These are cross-cutting changes that summarize the entire delta.",
               "subtasks": [
                 {
@@ -193,7 +193,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S2",
                   "title": "Update src/index.ts export comments and verify dist build consistency",
-                  "status": "Ready",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T1.S1"
