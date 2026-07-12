@@ -268,6 +268,12 @@ import { FormErrorBoundary } from 'geoform';
 | `onError` | `(error, info) => void` | - | Called when error is caught |
 | `fallback` | `ReactNode` | - | Custom error UI |
 
+**Methods:**
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `showError` | `(error: Error) => void` | Imperatively display the Retry / Dismiss fallback UI for a **non-render** error — e.g. a form-invoked `onError`. Sets the same state as a caught render error, so the form stays mounted and the stack is unchanged (PRD §9). Does **not** trigger `componentDidCatch` or the `onError` prop callback (no React error was caught), so perform any logging **before** calling it. |
+
 **CSS Classes:**
 
 ```css
@@ -463,23 +469,33 @@ function URLSyncedApp() {
 
 #### useFormStackViewport
 
-Low-level hook that returns the props required by `<FormStackRenderer/>` — the
-internal stack plus the `onClose`/`onCancelRequest` callbacks — or `null` when
-there is nothing to render. The returned value is assignable to
-`FormStackRendererProps`, so it can be spread directly onto the renderer.
+Low-level hook that returns a **sanitized, read-only** view of the open forms — each
+entry as a plain `{ id, label? }` (`StackEntry`) plus the `onClose` callback — or
+`null` when there is nothing to render (empty stack, or used outside a
+`<FormStackProvider>`).
 
-For consumers who want to forward custom props to `<FormStackRenderer/>` or wrap
-it, instead of mounting the zero-prop `<FormStackViewport/>` component. Most
-consumers should use `<FormStackViewport/>`.
+Use it when you want to **read** the open forms for custom rendering (e.g. a host
+header, a summary list, or breadcrumb-like chrome you build yourself) **without**
+mounting the renderer. It exposes only display-oriented fields — never the internal
+`component`/`deferred`/`confirmOnCancel` or an `onCancelRequest` callback (PRD §10.1
+"no internal-type leakage"). Most consumers should use the zero-prop
+[`<FormStackViewport/>`](#formstackviewport) component, which renders the stacked form
+bodies for you.
 
 ```tsx
-import { useFormStackViewport, FormStackRenderer } from 'geoform';
+import { useFormStackViewport } from 'geoform';
 
-function CustomHost() {
+function OpenFormsSummary() {
   const viewport = useFormStackViewport();
   if (!viewport) return null;
-  // viewport is assignable to FormStackRendererProps
-  return <FormStackRenderer {...viewport} />;
+  // Only safe, display-oriented fields are reachable:
+  return (
+    <ul>
+      {viewport.stack.map((entry) => (
+        <li key={entry.id}>{entry.label ?? entry.id}</li>
+      ))}
+    </ul>
+  );
 }
 ```
 
@@ -487,7 +503,7 @@ function CustomHost() {
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `value` | `FormStackViewportValue \| null` | Renderer props (assignable to `FormStackRendererProps`), or `null` when the stack is empty or the hook is used outside a `<FormStackProvider>` |
+| `value` | [`FormStackViewportValue`](#formstackviewportvalue) \| `null` | Sanitized view (`{ stack: readonly StackEntry[]; onClose }`), or `null` when the stack is empty or the hook is used outside a `<FormStackProvider>` |
 
 ---
 
@@ -555,6 +571,15 @@ interface OpenFormOptions<T = unknown> {
 }
 ```
 
+> **Note:** Form IDs must be unique across the forms currently on the stack. Pushing
+> a form whose `id` is already present produces a **development-mode warning** (a
+> `console.warn` from `openForm`) because duplicate IDs collide on the React `key`
+> used by `FormStackRenderer` and `Breadcrumbs`, which can cause form instance and
+> state mix-ups. The diagnostic message is
+> `[FormStack] Duplicate form id "…" detected`. Production behavior is unchanged —
+> the form is still pushed — so uniqueness remains a consumer responsibility
+> (PRD §5.2).
+
 ---
 
 #### StackEntry
@@ -602,30 +627,33 @@ interface FormStackActions {
 
 #### FormStackViewportValue
 
-The renderer props returned by `useFormStackViewport()`. Structurally identical
-to `FormStackRendererProps`, so the value can be spread directly onto
-`<FormStackRenderer/>` without leaking internal types into the public API.
-Consumers should never need to construct this themselves — read it via
-`useFormStackViewport()` or let `<FormStackViewport/>` render it.
+The **sanitized, read-only** value returned by `useFormStackViewport()` (or `null`
+when there is nothing to render). It deliberately exposes **only** the
+display-oriented fields of each open form — `{ id, label? }` — plus the `onClose`
+callback. It does **not** carry the internal stack-entry fields (`component`,
+`deferred`, `confirmOnCancel`) or an `onCancelRequest` callback, so a consumer cannot
+hijack a form's promise resolution (`entry.deferred.resolve(...)`) or mount forms
+directly (PRD §10.1 "no internal-type leakage").
+
+> **Note:** This public value is intentionally **not** spreadable onto
+> `<FormStackRenderer/>` — that renderer needs the full internal entry, which the
+> public type keeps hidden. Use the zero-prop
+> [`<FormStackViewport/>`](#formstackviewport) component to render the stack; use
+> `useFormStackViewport()` only to *read* the open forms.
 
 **Definition:**
 
 ```tsx
 interface FormStackViewportValue {
-  /** Internal stack entries to render (top visible, parents mounted-hidden) */
-  stack: InternalStackEntry<unknown>[];
-  /** Callback when a form closes (pops the top form from the stack) */
+  /** Read-only stack entries (`{ id, label? }` only — no component/deferred) */
+  stack: readonly StackEntry[];
+  /** Callback to close/pop the top form */
   onClose: () => void;
-  /** Request confirmation before cancelling an entry; resolves true if confirmed */
-  onCancelRequest: (entry: InternalStackEntry<unknown>) => Promise<boolean>;
 }
 ```
 
-> **Note:** `InternalStackEntry` is an **internal type** — it is not exported
-> from the package entry point and is not part of the public API. It appears
-> here only to document the value's shape. Consumers obtain the full value from
-> `useFormStackViewport()` and never construct or name `InternalStackEntry`
-> directly; the public, sanitized view of a stack entry is `StackEntry`.
+> **Note:** The public hook maps each internal entry down to its `id`/`label` only;
+> the full entry (with `component`/`deferred`) never leaves the renderer.
 
 ## Advanced Usage
 
@@ -736,20 +764,46 @@ The default dialog asks "Discard Changes?" with "Keep Editing" and "Discard" but
 
 ### Error Boundaries
 
-Each form is automatically wrapped in an error boundary. For custom error handling:
+Each form is automatically wrapped in its own `FormErrorBoundary`, so a crash in one
+form never affects its parents. The boundary surfaces errors through a single
+consistent Retry / Dismiss UI, and geoform routes **two** kinds of errors into it:
+
+1. **Render errors** — an exception thrown while the form renders. The boundary
+   catches it (`getDerivedStateFromError`) and shows the fallback UI.
+2. **Form-invoked errors** — the form calls its injected `onError` prop to signal an
+   application-level error (e.g. a failed save). The provider routes that error to the
+   same boundary (via its imperative `showError()` method), so it appears in the
+   identical Retry / Dismiss UI.
 
 ```tsx
-// In your form component
+// In your form component — call onError to SIGNAL an error.
+// It is routed TO the boundary; it is not "the boundary catching an error".
 function MyForm({ onSubmit, onCancel, onError }: FormProps<Data>) {
-  // onError is called when the error boundary catches an error
-  // Use it for logging to external services
+  const handleSave = async () => {
+    try {
+      const data = await persist();
+      onSubmit(data);
+    } catch (err) {
+      // Surface the error in the boundary's Retry/Dismiss UI.
+      // The form stays mounted, the stack is NOT mutated, and the
+      // `await openForm()` promise does NOT reject (PRD §9).
+      onError(err);
+    }
+  };
 }
 
 // The error boundary provides default UI with:
 // - Error message display
-// - "Try Again" button (re-renders the form)
-// - "Dismiss" button (closes the form)
+// - "Try Again" button (re-mounts the form; openForm() stays pending)
+// - "Dismiss" button (cancels the form; openForm() resolves undefined)
 ```
+
+Per PRD §9, an error **does not mutate the stack automatically** and `openForm()`
+**never rejects** on this path — it keeps honouring its `T | undefined` contract.
+**Retry** re-mounts the form (the promise stays pending); **Dismiss** resolves the
+caller's `await openForm()` with `undefined` (cancel semantics). See
+[`FormErrorBoundary`](#formerrorboundary) for the `showError(error)` method that powers
+the form-invoked path.
 
 ### Custom Breadcrumb Styling
 
