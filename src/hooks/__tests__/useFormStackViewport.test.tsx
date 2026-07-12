@@ -6,6 +6,7 @@ import { useFormStackActions } from '../useFormStackActions';
 import { FormStackProvider } from '../../components';
 import { FormStackRenderer, type FormStackRendererProps } from '../../components';
 import type {
+  FormStackViewportContextValue,
   FormStackViewportValue,
   FormProps,
 } from '../../types';
@@ -57,12 +58,12 @@ describe('useFormStackViewport', () => {
       expect(value.stack).toHaveLength(1);
       expect(value.stack[0]?.id).toBe('f1');
       expect(value.stack[0]?.label).toBe('F1');
-      expect(value.stack[0]?.confirmOnCancel).toBe(true);
       expect(typeof value.onClose).toBe('function');
-      expect(typeof value.onCancelRequest).toBe('function');
+      // Sanitized: the public value exposes NO onCancelRequest callback.
+      expect('onCancelRequest' in value).toBe(false);
     });
 
-    it('exposes internal entry fields (component/deferred) without leaking types', () => {
+    it('returns a sanitized stack exposing only { id, label } (no internal fields)', () => {
       const { result } = renderHook(
         () => {
           const viewport = useFormStackViewport();
@@ -73,35 +74,57 @@ describe('useFormStackViewport', () => {
       );
 
       act(() => {
-        result.current.openForm({ id: 'f1', component: StubForm });
+        // Open with confirmOnCancel to prove the flag stays internal.
+        result.current.openForm({ id: 'f1', component: StubForm, label: 'F1', confirmOnCancel: true });
       });
 
-      const entry = (result.current.viewport as FormStackViewportValue).stack[0];
-      // The hook still surfaces the internal renderer props (component/deferred)
-      // so <FormStackRenderer/> can mount the form — but as a single opaque
-      // value, not individual exported internals.
-      expect(entry).toBeDefined();
-      expect(typeof entry?.component).toBe('function');
-      expect(entry?.deferred).toBeDefined();
-      expect(typeof entry?.deferred.resolve).toBe('function');
+      const value = result.current.viewport as FormStackViewportValue;
+      expect(value.stack).toHaveLength(1);
+
+      // The public entry carries ONLY id + label (component/deferred/confirmOnCancel dropped).
+      const entry = value.stack[0]!;
+      expect(Object.keys(entry).sort()).toEqual(['id', 'label']);
+      expect('component' in entry).toBe(false);
+      expect('deferred' in entry).toBe(false);
+      expect('confirmOnCancel' in entry).toBe(false);
+
+      // The public value exposes ONLY { stack, onClose } (no onCancelRequest).
+      expect(typeof value.onClose).toBe('function');
+      expect(Object.keys(value).sort()).toEqual(['onClose', 'stack']);
+      expect('onCancelRequest' in value).toBe(false);
     });
   });
 
   describe('type-level contracts', () => {
-    it('FormStackViewportValue is assignable to FormStackRendererProps', () => {
-      // Compile-time guard for acceptance criterion #5: the non-null return of
-      // useFormStackViewport() must be spreadable onto <FormStackRenderer/>.
+    it('the INTERNAL context value is assignable to FormStackRendererProps (renderer spread still compiles)', () => {
+      // <FormStackViewport/> spreads the internal FormStackViewportContextValue onto
+      // <FormStackRenderer/>. That spread must still type-check: the internal context
+      // value is structurally identical to FormStackRendererProps.
       const acceptRendererProps = (_p: FormStackRendererProps): null => null;
-      const value: FormStackViewportValue = {
+      const internal: FormStackViewportContextValue = {
         stack: [],
         onClose: () => {},
         onCancelRequest: async () => true,
       };
-      acceptRendererProps(value); // compiles only if assignable
-      // <FormStackViewport/> has no required props:
-      const _el = <FormStackRenderer {...value} />;
+      acceptRendererProps(internal); // compiles only if assignable
+      const _el = <FormStackRenderer {...internal} />;
       void _el;
       expect(true).toBe(true);
+    });
+
+    it('the PUBLIC FormStackViewportValue is NOT assignable to FormStackRendererProps (leak closed)', () => {
+      // The public hook return type intentionally omits onCancelRequest (and the
+      // internal stack-entry fields), so it can no longer be spread onto the renderer.
+      // These conditional-type guards FAIL TO COMPILE if the leak ever returns
+      // (regression guard), and assert the runtime literal value too.
+      type InternalAssignable = FormStackViewportContextValue extends FormStackRendererProps ? true : false;
+      type PublicAssignable = FormStackViewportValue extends FormStackRendererProps ? true : false;
+
+      const internalAssignable: InternalAssignable = true;  // compiles => internal IS assignable
+      const publicAssignable: PublicAssignable = false;     // compiles => public is NOT assignable
+
+      expect(internalAssignable).toBe(true);
+      expect(publicAssignable).toBe(false);
     });
   });
 });
