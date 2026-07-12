@@ -39,6 +39,11 @@ interface FormErrorBoundaryState {
  * Each form in the stack is wrapped with its own error boundary, ensuring
  * that a crash in one form doesn't affect parent forms.
  *
+ * In addition to catching render errors, the boundary exposes a public
+ * `showError(error)` instance method so callers with a ref can surface a
+ * non-render error (e.g. a form-invoked onError) through the SAME Retry/Dismiss
+ * UI without mutating the stack.
+ *
  * ## Retry Behavior
  *
  * The retry mechanism uses `retryCount` to force child component remount:
@@ -122,6 +127,22 @@ export class FormErrorBoundary extends Component<
   override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Call optional error callback for logging
     this.props.onError?.(error, errorInfo);
+  }
+
+  /**
+   * Imperatively display the error fallback UI for a NON-render error
+   * (e.g. a form-invoked `onError`). Sets the same state as
+   * `getDerivedStateFromError`, so the existing Retry/Dismiss UI appears and
+   * the form stays mounted (no stack mutation).
+   *
+   * Note: `componentDidCatch` and the `onError` prop callback do NOT fire for
+   * imperatively-set errors — no React error was caught. Callers must perform
+   * any logging BEFORE calling this method.
+   *
+   * @param error - The error to surface in the fallback UI.
+   */
+  showError(error: Error): void {
+    this.setState({ hasError: true, error });
   }
 
   /**

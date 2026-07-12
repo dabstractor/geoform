@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { createRef } from 'react';
 import { FormErrorBoundary } from '../FormErrorBoundary';
 
 // Component that throws an error during render
@@ -340,6 +341,93 @@ describe('FormErrorBoundary', () => {
       expect(container.querySelector('.form-error-boundary__actions')).toBeInTheDocument();
       expect(container.querySelector('.form-error-boundary__retry-button')).toBeInTheDocument();
       expect(container.querySelector('.form-error-boundary__dismiss-button')).toBeInTheDocument();
+    });
+  });
+
+  describe('imperative showError', () => {
+    it('shows the fallback UI when showError() is called via ref', () => {
+      const ref = createRef<FormErrorBoundary>();
+
+      render(
+        <FormErrorBoundary ref={ref} formId="test" onDismiss={vi.fn()}>
+          <div data-testid="child">Child</div>
+        </FormErrorBoundary>
+      );
+
+      // Initially no error UI and children are visible
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByTestId('child')).toBeInTheDocument();
+
+      // Imperatively trigger the fallback (setState outside a React handler -> act())
+      act(() => {
+        ref.current!.showError(new Error('boom'));
+      });
+
+      // Fallback appears with the error message; children are hidden
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByText('boom')).toBeInTheDocument();
+      expect(screen.queryByTestId('child')).not.toBeInTheDocument();
+    });
+
+    it('does not call onError for imperatively-set errors', () => {
+      const onError = vi.fn();
+      const ref = createRef<FormErrorBoundary>();
+
+      render(
+        <FormErrorBoundary ref={ref} formId="test" onDismiss={vi.fn()} onError={onError}>
+          <div data-testid="child" />
+        </FormErrorBoundary>
+      );
+
+      act(() => {
+        ref.current!.showError(new Error('boom'));
+      });
+
+      // componentDidCatch never ran (no render throw), so onError is NOT invoked.
+      // Callers must perform any logging BEFORE calling showError.
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('clears the error and re-renders children when Try Again is clicked after showError', () => {
+      const ref = createRef<FormErrorBoundary>();
+
+      render(
+        <FormErrorBoundary ref={ref} formId="test" onDismiss={vi.fn()}>
+          <div data-testid="child">Child</div>
+        </FormErrorBoundary>
+      );
+
+      act(() => {
+        ref.current!.showError(new Error('boom'));
+      });
+
+      // Fallback is showing
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+
+      // Click Try Again -> clears error state and re-renders children
+      fireEvent.click(screen.getByRole('button', { name: 'Try Again' }));
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.getByTestId('child')).toBeInTheDocument();
+    });
+
+    it('calls onDismiss when Dismiss is clicked after showError', () => {
+      const onDismiss = vi.fn();
+      const ref = createRef<FormErrorBoundary>();
+
+      render(
+        <FormErrorBoundary ref={ref} formId="test" onDismiss={onDismiss}>
+          <div data-testid="child">Child</div>
+        </FormErrorBoundary>
+      );
+
+      act(() => {
+        ref.current!.showError(new Error('boom'));
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+
+      expect(onDismiss).toHaveBeenCalledTimes(1);
     });
   });
 });
