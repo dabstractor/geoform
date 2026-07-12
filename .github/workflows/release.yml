@@ -1,0 +1,55 @@
+name: Release
+
+# semantic-release analyzes Conventional Commits on every push to main and
+# releases directly -- no release PR required. This fits a solo workflow that
+# commits straight to main. If the commits since the last tag contain nothing
+# releasable (only chore/docs/test/etc.), it exits without publishing.
+on:
+  push:
+    branches:
+      - main
+  # Manual escape hatch for when GitHub drops a push webhook, or to re-run
+  # against the current HEAD without crafting an empty commit.
+  workflow_dispatch:
+
+# contents:write lets semantic-release push the release commit/tag and create
+# the GitHub release. We deliberately do NOT grant id-token: write. With it
+# present, @semantic-release/npm@13's OIDC branch fires and short-circuits the
+# working NPM_TOKEN (granular access token) path -- its OIDC code discards the
+# token, leaving the .npmrc empty (ENEEDAUTH at publish). Omitting it forces
+# the plugin down the working token path.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history is required so semantic-release can read prior tags
+          # and compute the commits since the last release.
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release

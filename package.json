@@ -2,7 +2,7 @@
   "name": "geoform",
   "version": "0.1.1",
   "description": "React Hierarchical Form Stack System - infinitely nestable forms with state preservation",
-  "author": "Your Name",
+  "author": "dabstractor",
   "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -26,6 +26,9 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "sideEffects": false,
   "keywords": [
     "react",
@@ -38,12 +41,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/geoform"
+    "url": "git+https://github.com/dabstractor/geoform.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/geoform/issues"
+    "url": "https://github.com/dabstractor/geoform/issues"
   },
-  "homepage": "https://github.com/yourusername/geoform#readme",
+  "homepage": "https://github.com/dabstractor/geoform#readme",
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
@@ -58,6 +61,13 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "jsdom": "^25.0.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.0",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.0",
+    "@semantic-release/npm": "^13.0.0",
+    "@semantic-release/release-notes-generator": "^14.0.0",
+    "semantic-release": "^25.0.0",
     "tsup": "^8.3.0",
     "typescript": "^5.7.0",
     "vite": "^6.0.0",
@@ -71,6 +81,8 @@
     "test:coverage": "vitest run --coverage",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist coverage",
+    "release": "semantic-release",
+    "release:dry": "semantic-release --dry-run",
     "prepublishOnly": "npm run clean && npm run type-check && npm run test && npm run build"
   }
 }
