@@ -95,6 +95,19 @@ export interface UseFormStackReturn {
    */
   closeForm: () => void;
   /**
+   * Navigates to a specific form in the stack by index, cancelling all deeper
+   * forms (each deeper form's deferred resolves with `undefined`, so its
+   * parent's `await openForm()` resolves with `undefined`).
+   *
+   * Used by `<Breadcrumbs/>` for direct navigation to an earlier form. In
+   * development an out-of-range index throws a `RangeError`; in production it
+   * is a no-op.
+   *
+   * @param index - Zero-based index of the target form
+   * @see {@link Breadcrumbs} - Component that calls this on breadcrumb clicks
+   */
+  popToIndex: (index: number) => void;
+  /**
    * Cancels the top form on the stack through the proper lifecycle
    * (confirmation when `confirmOnCancel`, then promise resolution).
    *
@@ -155,7 +168,7 @@ export interface UseFormStackReturn {
  */
 export function useFormStack(): UseFormStackReturn {
   const { stack } = useFormStackState();
-  const { openForm, closeForm, cancelForm } = useFormStackActions();
+  const { openForm, closeForm, popToIndex, cancelForm } = useFormStackActions();
 
-  return { stack, openForm, closeForm, cancelForm };
+  return { stack, openForm, closeForm, popToIndex, cancelForm };
 }

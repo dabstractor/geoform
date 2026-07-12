@@ -94,6 +94,36 @@ describe('useFormStack', () => {
 
       // closeForm is void function
       expect(typeof returnValue.closeForm).toBe('function');
+
+      // popToIndex is exposed and callable
+      expect(returnValue).toHaveProperty('popToIndex');
+      expect(typeof returnValue.popToIndex).toBe('function');
+    });
+  });
+
+  describe('popToIndex', () => {
+    it('should expose a working popToIndex that cancels deeper forms', async () => {
+      // Arrange
+      const { result } = renderHook(() => useFormStack(), { wrapper });
+
+      // Act - build a 2-deep stack (openForm pushes synchronously, then awaits)
+      act(() => {
+        result.current.openForm({ id: 'form-1', component: () => null });
+      });
+      act(() => {
+        result.current.openForm({ id: 'form-2', component: () => null });
+      });
+
+      // Assert - stack grew to 2 without resolving the suspended promises
+      expect(result.current.stack).toHaveLength(2);
+
+      // Act - popToIndex(0) cancels the deeper form
+      await act(async () => {
+        result.current.popToIndex(0);
+      });
+
+      // Assert - deeper form cancelled, stack shrank to 1
+      expect(result.current.stack).toHaveLength(1);
     });
   });
 
